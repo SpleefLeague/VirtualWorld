@@ -8,8 +8,6 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeBlock;
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
-import java.util.Collection;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 

@@ -116,7 +116,7 @@ public class FakeWorldManager implements Listener {
                 .filter(e -> !e.getKey().getChanges().isEmpty())//Ignore empty worlds
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
                 .flatMap(e -> e.getKey().getChanges().stream())
-                .distinct()
+                .distinct()//FakeBlock.equals is true if the coordinates are the same
                 .collect(Collectors.groupingBy(
                         BlockChange::getType,
                         HashMap::new,
