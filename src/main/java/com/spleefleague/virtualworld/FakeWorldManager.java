@@ -10,6 +10,7 @@ import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
+import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,9 +33,11 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public class FakeWorldManager implements Listener {
     
     private final Map<Player, Map<FakeWorldBase, Integer>> observedWorlds;
+    private final MultiBlockChangeHandler mbchandler;
     
-    private FakeWorldManager() {
+    private FakeWorldManager(MultiBlockChangeHandler mbchandler) {
         this.observedWorlds = new ConcurrentHashMap<>();
+        this.mbchandler = mbchandler;
     }
     
     public Collection<FakeBlockBase> getBlocksInChunk(Player player, int x, int z) {
@@ -46,6 +50,10 @@ public class FakeWorldManager implements Listener {
                 .flatMap(c -> c.getUsedBlocks().stream())
                 .distinct()
                 .collect(Collectors.toSet());
+    }
+    
+    public FakeBlockBase getBlockAt(Player player, Location l) {
+        return getBlockAt(player, l.getWorld(), l.getBlockX(), l.getBlockY(), l.getBlockZ());
     }
     
     public FakeBlockBase getBlockAt(Player player, World world, int x, int y, int z) {
@@ -119,9 +127,10 @@ public class FakeWorldManager implements Listener {
                 ));
     }
     
-    public static void init() {
-        FakeWorldManager manager = new FakeWorldManager();
+    public static FakeWorldManager init(MultiBlockChangeHandler mbchandler) {
+        FakeWorldManager manager = new FakeWorldManager(mbchandler);
         manager.startBlockCheckLoop();
         Bukkit.getPluginManager().registerEvents(manager, VirtualWorld.getInstance());
+        return manager;
     }
 }

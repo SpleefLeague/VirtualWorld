@@ -39,13 +39,12 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         if(affected == null) {
             return;
         }
-        System.out.println(ppcbd.getStatus());
         if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK) {
-            runSync(() -> {
+            Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 FakeBlockBreakEvent breakEvent = new FakeBlockBreakEvent(affected, event.getPlayer());
                 Bukkit.getPluginManager().callEvent(breakEvent);
                 if(breakEvent.isCancelled()) {
-                    runSync(() -> {
+                    Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
                         p.sendBlockChange(new Location(p.getWorld(), loc.getX(), loc.getY(), loc.getZ()), affected.getType(), affected.getData());
                     }, 1);
                     return;
@@ -55,13 +54,5 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
                 affected.registerChanged(ChangeType.BREAK);
             });
         }
-    }
-    
-    private void runSync(Runnable run) {
-        Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), run);
-    }
-    
-    private void runSync(Runnable run, int delay) {
-        Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), run, delay);
     }
 }
