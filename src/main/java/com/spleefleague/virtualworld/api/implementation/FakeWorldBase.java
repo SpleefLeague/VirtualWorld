@@ -1,5 +1,6 @@
-package com.spleefleague.virtualworld;
+package com.spleefleague.virtualworld.api.implementation;
 
+import com.spleefleague.virtualworld.Area;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
 import java.util.Collection;
@@ -40,7 +41,7 @@ public class FakeWorldBase implements FakeWorld {
         return chunk;
     }
     
-    protected FakeChunkBase getChunkAtRaw(int x, int z) {
+    public FakeChunkBase getChunkAtRaw(int x, int z) {
         if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) return null;
         if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) return null;
         long key = getKey(x, z);
@@ -58,7 +59,7 @@ public class FakeWorldBase implements FakeWorld {
         }
     }
     
-    protected FakeBlockBase getBlockAtRaw(int x, int y, int z) {
+    public FakeBlockBase getBlockAtRaw(int x, int y, int z) {
         FakeChunkBase chunk = getChunkAtRaw(x / 16, z / 16);
         if(chunk != null) {
             return chunk.getBlockRaw(x & 15, y, z & 15);
@@ -76,6 +77,7 @@ public class FakeWorldBase implements FakeWorld {
                 .collect(Collectors.toSet());
     }
 
+    @Override
     public World getHandle() {
         return handle;
     }

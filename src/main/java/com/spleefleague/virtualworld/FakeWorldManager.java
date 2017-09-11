@@ -5,15 +5,17 @@
  */
 package com.spleefleague.virtualworld;
 
-import com.spleefleague.virtualworld.BlockChange.ChangeType;
+import com.spleefleague.virtualworld.api.implementation.BlockChange;
+import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
+import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
+import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.groupingBy;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -32,6 +34,18 @@ public class FakeWorldManager implements Listener {
     
     private FakeWorldManager() {
         this.observedWorlds = new ConcurrentHashMap<>();
+    }
+    
+    public Collection<FakeBlockBase> getBlocksInChunk(Player player, int x, int z) {
+        return observedWorlds.get(player)
+                .entrySet()
+                .stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
+                .map(e -> e.getKey().getChunkAtRaw(x, z))
+                .filter(c -> c != null)
+                .flatMap(c -> c.getUsedBlocks().stream())
+                .distinct()
+                .collect(Collectors.toSet());
     }
     
     public FakeBlockBase getBlockAt(Player player, World world, int x, int y, int z) {
@@ -77,36 +91,32 @@ public class FakeWorldManager implements Listener {
     private void startBlockCheckLoop() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(VirtualWorld.getInstance(), () -> {
             for(Player player : observedWorlds.keySet()) {
-                Collection<FakeBlock> sendChange = new HashSet<>();
-                Collection<FakeBlock> sendBreak = new HashSet<>();
-                Collection<FakeBlock> sendPlace = new HashSet<>();
-                observedWorlds.get(player)
-                        .entrySet()
-                        .stream()
-                        .filter(e -> !e.getKey().getChanges().isEmpty())//Ignore empty worlds
-                        .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
-                        .flatMap(e -> e.getKey().getChanges().stream())
-                        .distinct()
-                        .map(e -> e.getKey().getChanges())
-                        .stream()
-                        .forEach(changes -> {
-                            Map<ChangeType, List<BlockChange>> grouped = changes
-                                    .stream()
-                                    .collect(groupingBy(bc -> bc.getType()));
-                            sendChange.addAll(grouped
-                                    .get(ChangeType.PLUGIN)
-                                    .stream().collect(Collectors.toSet()));
-                            sendBreak.addAll(grouped
-                                    .get(ChangeType.BREAK)
-                                    .stream().collect(Collectors.toSet()));
-                            sendPlace.addAll(grouped
-                                    .get(ChangeType.BREAK)
-                                    .stream().collect(Collectors.toSet()));
-                            
-                        });
-                
+                Map<ChangeType, Set<FakeBlock>> changes = getChangesPerPlayer(player);
+                //Send changes
             }
+            observedWorlds.values()
+                    .stream()
+                    .flatMap(m -> m.keySet().stream())
+                    .forEach(fw -> fw.getChanges().clear());
         }, 0, 1);
+    }
+    
+    private Map<ChangeType, Set<FakeBlock>> getChangesPerPlayer(Player player) {
+        return observedWorlds.get(player)
+                .entrySet()
+                .stream()
+                .filter(e -> !e.getKey().getChanges().isEmpty())//Ignore empty worlds
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
+                .flatMap(e -> e.getKey().getChanges().stream())
+                .distinct()
+                .collect(Collectors.groupingBy(
+                        BlockChange::getType,
+                        HashMap::new,
+                        Collectors.mapping(
+                                BlockChange::getBlock,
+                                Collectors.toSet()
+                        )
+                ));
     }
     
     public static void init() {

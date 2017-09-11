@@ -6,6 +6,7 @@
 package com.spleefleague.virtualworld.api;
 
 import java.util.Collection;
+import org.bukkit.Chunk;
 
 /**
  *
@@ -18,4 +19,5 @@ public interface FakeChunk {
     FakeWorld getWorld();
     FakeBlock getBlock(int x, int y, int z);
     Collection<? extends FakeBlock> getUsedBlocks();
+    Chunk getHandle();
 }

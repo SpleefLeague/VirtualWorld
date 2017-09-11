@@ -1,5 +1,6 @@
-package com.spleefleague.virtualworld;
+package com.spleefleague.virtualworld.api.implementation;
 
+import com.spleefleague.virtualworld.Area;
 import com.spleefleague.virtualworld.api.FakeChunk;
 import java.util.Collection;
 import java.util.Map;
@@ -78,6 +79,7 @@ public class FakeChunkBase implements FakeChunk {
         world.notifyChange(change);
     }
 
+    @Override
     public Chunk getHandle() {
         return world.getHandle().getChunkAt(x, z);
     }

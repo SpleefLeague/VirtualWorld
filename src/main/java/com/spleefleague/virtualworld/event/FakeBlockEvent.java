@@ -5,7 +5,7 @@
  */
 package com.spleefleague.virtualworld.event;
 
-import com.spleefleague.virtualworld.FakeBlockBase;
+import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;

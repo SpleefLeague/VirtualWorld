@@ -1,6 +1,6 @@
-package com.spleefleague.virtualworld;
+package com.spleefleague.virtualworld.api.implementation;
 
-import com.spleefleague.virtualworld.BlockChange.ChangeType;
+import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -104,6 +104,7 @@ public class FakeBlockBase implements FakeBlock {
         return handle.getType() == type && handle.getData() == data;
     }
     
+    @Override
     public Block getHandle() {
         return chunk.getHandle().getBlock(x, y, z);
     }
