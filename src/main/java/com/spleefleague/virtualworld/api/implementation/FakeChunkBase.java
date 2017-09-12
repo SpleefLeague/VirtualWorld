@@ -1,10 +1,12 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.Area;
+import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeChunk;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.bukkit.Chunk;
 import org.bukkit.util.Vector;
 
@@ -74,11 +76,13 @@ public class FakeChunkBase implements FakeChunk {
     }
     
     protected void notifyChange(BlockChange change) {
-        FakeBlockBase changed = change.getBlock();
-        if(changed.getHandle().getType() == changed.getType() && changed.getHandle().getData() == changed.getData()) {
-            this.blocks.remove(getKey(changed.getX(), changed.getY(), changed.getZ()));
-        }
         world.notifyChange(change);
+    }
+    
+    protected void removeAll(Collection<FakeBlock> removeable) {
+        this.blocks.keySet().removeAll(removeable.stream()
+                .map(fb -> getKey(fb.getX(), fb.getY(), fb.getZ()))
+                .collect(Collectors.toSet()));
     }
 
     @Override

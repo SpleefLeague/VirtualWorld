@@ -14,7 +14,9 @@ import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -53,11 +55,11 @@ public class FakeWorldManager implements Listener {
                 .collect(Collectors.toSet());
     }
     
-    public FakeWorld getWorldAt(Player player, World world, Location l) {
+    public FakeWorld getWorldAt(Player player, Location l) {
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
-                .filter(e -> e.getKey().getHandle() == world)
+                .filter(e -> e.getKey().getHandle() == l.getWorld())
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
                 .map(e -> e.getKey())
                 .filter(fw -> fw.getArea().isInside(l.toVector()))
@@ -71,15 +73,19 @@ public class FakeWorldManager implements Listener {
     }
     
     public FakeBlock getBlockAt(Player player, World world, int x, int y, int z) {
-        return observedWorlds.get(player)
+        System.out.println("Getting " + x + " " + y + " " + z + " " + player + " " + world);
+        FakeBlock fb =  observedWorlds.get(player)
                 .entrySet()
                 .stream()
                 .filter(e -> e.getKey().getHandle() == world)
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
                 .map(e -> e.getKey())
-                .findFirst()
                 .map(fw -> ((FakeWorldBase)fw).getBlockAtRaw(x, y, z))
+                .filter(o -> o != null)
+                .findFirst()
                 .orElse(null);
+        System.out.println(fb);
+        return fb;
     }
     
     public void addWorld(Player player, FakeWorld world, int priority) {
@@ -151,7 +157,14 @@ public class FakeWorldManager implements Listener {
                 .filter(e -> !((FakeWorldBase)e.getKey()).getChanges().isEmpty())//Ignore empty worlds
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
                 .flatMap(e -> ((FakeWorldBase)e.getKey()).getChanges().stream())
-                .distinct()//FakeBlock.equals is true if the coordinates are the same
+                //.distinct()
+                .filter(bc -> {
+                    System.out.println(this.getBlockAt(player, bc.getBlock().getLocation()));
+                    System.out.println(bc.getBlock());
+                    System.out.println(bc.getBlock().getWorld().getBlockAtRaw(bc.getBlock().getX(), bc.getBlock().getY(), bc.getBlock().getZ()));
+                    return this.getBlockAt(player, bc.getBlock().getLocation()) == bc.getBlock();
+                            
+                            })//Makes the previous distinct redundant, but is slower
                 .collect(Collectors.groupingBy(
                         BlockChange::getType,
                         HashMap::new,

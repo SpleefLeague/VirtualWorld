@@ -64,7 +64,7 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
         if(!handItem.getType().isBlock()) {
             return;
         }
-        FakeWorld targetWorld = fwmanager.getWorldAt(player, player.getWorld(), placeLocation);
+        FakeWorld targetWorld = fwmanager.getWorldAt(player, placeLocation);
         if(targetWorld != null) {
             event.setCancelled(true);
             FakeBlockPlaceEvent placeEvent = new FakeBlockPlaceEvent(player, targetWorld.getBlockAt(placeLocation), handItem.getType(), handItem.getData().getData());

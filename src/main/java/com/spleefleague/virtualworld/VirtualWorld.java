@@ -34,7 +34,7 @@ public class VirtualWorld extends JavaPlugin implements Listener {
     private static VirtualWorld instance;
     private ProtocolManager manager;
     private FakeWorldManager fakeWorldManager;
-    private FakeWorld test;
+    private FakeWorld test, test2;
     
     @Override
     public void onEnable() {
@@ -59,6 +59,17 @@ public class VirtualWorld extends JavaPlugin implements Listener {
                 }
             }
         }
+        lo = new Vector (110, 110, 110);
+        hi = new Vector (140, 140, 140);
+        area = new Area(hi, lo);
+        test2 = VirtualWorld.getInstance().getFakeWorldManager().createWorld(Bukkit.getWorlds().get(0), area);
+        for (int x = 110; x < 130; x++) {
+            for (int y = 110; y < 130; y++) {
+                for (int z = 110; z < 130; z++) {
+                    test2.getBlockAt(x, y, z).setType(Material.GLASS);
+                }
+            }
+        }
     }
     
     public ProtocolManager getProtocolManager() {
@@ -77,15 +88,19 @@ public class VirtualWorld extends JavaPlugin implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         fakeWorldManager.addWorld(player, test, 0);
+        fakeWorldManager.addWorld(player, test2, 1);
+        FakeWorld tmp = test;
+        test = test2;
+        test2 = tmp;
     }
     
-    @EventHandler
-    public void onFakeBreak(FakeBlockBreakEvent event) {
-        event.setCancelled(event.getPlayer().getName().equals("Geier"));
-    }
-    
-    @EventHandler
-    public void onFakePlace(FakeBlockPlaceEvent event) {
-        event.setCancelled(event.getPlayer().getName().equals("Geier"));
-    }
+//    @EventHandler
+//    public void onFakeBreak(FakeBlockBreakEvent event) {
+//        event.setCancelled(event.getPlayer().getName().equals("Geier"));
+//    }
+//    
+//    @EventHandler
+//    public void onFakePlace(FakeBlockPlaceEvent event) {
+//        event.setCancelled(event.getPlayer().getName().equals("Geier"));
+//    }
 }

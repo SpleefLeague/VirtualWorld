@@ -7,8 +7,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
@@ -91,14 +93,16 @@ public class FakeWorldBase implements FakeWorld {
     }
     
     public void clearChanges() {
+        Set<FakeBlock> removeable = changes.stream()
+                .map(BlockChange::getBlock)
+                .filter(b -> b.getHandle().getType() == b.getType() && b.getHandle().getData() == b.getData())
+                .collect(Collectors.toSet());
+        chunks.values().forEach(fc -> fc.removeAll(removeable));
+        chunks.values().removeIf(FakeChunkBase::isEmpty);
         changes.clear();
     }
 
     protected void notifyChange(BlockChange change) {
-        FakeChunkBase chunk = change.getBlock().getChunk();
-        if(chunk.isEmpty()) {
-            chunks.remove(chunk.getX(), chunk.getZ());
-        }
         changes.add(change);
     }
     

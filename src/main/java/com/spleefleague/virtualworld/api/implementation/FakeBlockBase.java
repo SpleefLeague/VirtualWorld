@@ -2,6 +2,7 @@ package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
@@ -28,8 +29,8 @@ public class FakeBlockBase implements FakeBlock {
     }
     
     @Override
-    public Vector getLocation() {
-        return new Vector(x, y, z);
+    public Location getLocation() {
+        return new Location(getWorld().getHandle(), x, y, z);
     }
 
     @Override

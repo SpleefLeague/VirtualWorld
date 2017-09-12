@@ -5,9 +5,9 @@
  */
 package com.spleefleague.virtualworld.api;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.util.Vector;
 
 /**
  *
@@ -26,6 +26,6 @@ public interface FakeBlock {
     int getX();
     int getY();
     int getZ();
-    Vector getLocation();
+    Location getLocation();
     Block getHandle();
 }
