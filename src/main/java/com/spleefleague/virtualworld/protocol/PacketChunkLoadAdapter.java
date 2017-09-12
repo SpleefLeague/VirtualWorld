@@ -7,7 +7,7 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
+import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.protocol.chunk.ChunkPacketInjector;
 import java.util.Collection;
 import org.bukkit.Bukkit;
@@ -39,7 +39,7 @@ public class PacketChunkLoadAdapter extends PacketAdapter {
             Chunk chunk = event.getPlayer().getWorld().getChunkAt(wpsmc.getChunkX(), wpsmc.getChunkZ());
             mbchandler.addChunk(event.getPlayer(), chunk);
         });
-        Collection<FakeBlockBase> blocks = fwmanager.getBlocksInChunk(event.getPlayer(), wpsmc.getChunkX(), wpsmc.getChunkZ());
+        Collection<FakeBlock> blocks = fwmanager.getBlocksInChunk(event.getPlayer(), wpsmc.getChunkX(), wpsmc.getChunkZ());
         if (!blocks.isEmpty()) {
             ChunkPacketInjector.setBlocksPacketMapChunk(event.getPlayer().getWorld(), event.getPacket(), blocks);
         }

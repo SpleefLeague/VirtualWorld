@@ -47,9 +47,9 @@ public class MultiBlockChangeHandler implements Listener {
         return instance;
     }
 
-    private void sendMultiBlockChange(MultiBlockChangeData mbcd, List<Player> affected) {
+    private void sendMultiBlockChange(MultiBlockChangeData mbcd, Collection<Player> affected) {
         if (!affected.isEmpty()) {
-            World world = affected.get(0).getWorld();
+            World world = affected.stream().findAny().get().getWorld();
             net.minecraft.server.v1_12_R1.Chunk chunk = ((CraftChunk) world.getChunkAt(mbcd.getChunkX(), mbcd.getChunkZ())).getHandle();
             WrapperPlayServerMultiBlockChange wrapper = new WrapperPlayServerMultiBlockChange();
             wrapper.setChunk(new ChunkCoordIntPair(chunk.locX, chunk.locZ));
@@ -62,11 +62,11 @@ public class MultiBlockChangeHandler implements Listener {
         }
     }
 
-    public void changeBlocks(FakeBlock[] blocks, Player... affected) {
+    public void changeBlocks(Collection<FakeBlock> blocks, Player... affected) {
         changeBlocks(blocks, Arrays.asList(affected));
     }
 
-    public void changeBlocks(FakeBlock[] blocks, List<Player> affected) {
+    public void changeBlocks(Collection<FakeBlock> blocks, Collection<Player> affected) {
         HashMap<Chunk, MultiBlockChangeData> changes = new HashMap<>();
         if (blocks != null) {
             for (FakeBlock block : blocks) {
@@ -92,7 +92,7 @@ public class MultiBlockChangeHandler implements Listener {
         changeBlocks(blocks, to, Arrays.asList(affected));
     }
 
-    public void changeBlocks(Block[] blocks, Material to, List<Player> affected) {
+    public void changeBlocks(Block[] blocks, Material to, Collection<Player> affected) {
         HashMap<Chunk, MultiBlockChangeData> changes = new HashMap<>();
         if (blocks != null) {
             for (Block block : blocks) {
@@ -113,7 +113,7 @@ public class MultiBlockChangeHandler implements Listener {
         }
     }
 
-    public void changeBlocks(Location pos1, Location pos2, Material to, List<Player> affected) {
+    public void changeBlocks(Location pos1, Location pos2, Material to, Collection<Player> affected) {
         changeBlocks(getBlocksInArea(pos1, pos2).toArray(new Block[0]), to, affected);
     }
 

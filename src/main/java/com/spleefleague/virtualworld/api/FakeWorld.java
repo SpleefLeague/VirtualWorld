@@ -21,7 +21,7 @@ public interface FakeWorld {
     FakeBlock getBlockAt(int x, int y, int z);
     FakeBlock getBlockAt(Location loc);
     FakeBlock getBlockAt(Vector vec);
-    Collection<? extends FakeBlock> getUsedBlock(); 
+    Collection<? extends FakeBlock> getUsedBlocks(); 
     World getHandle();
     Area getArea();
 }

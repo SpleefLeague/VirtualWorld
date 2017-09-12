@@ -1,6 +1,6 @@
 package com.spleefleague.virtualworld.event;
 
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
+import com.spleefleague.virtualworld.api.FakeBlock;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -13,11 +13,11 @@ public class FakeBlockPlaceEvent extends FakeBlockEvent{
     private final Material type;
     private final byte data;
     
-    public FakeBlockPlaceEvent(Player player, FakeBlockBase replaced, Material targetType) {
+    public FakeBlockPlaceEvent(Player player, FakeBlock replaced, Material targetType) {
         this(player, replaced, targetType, (byte)0);
     }
     
-    public FakeBlockPlaceEvent(Player player, FakeBlockBase replaced, Material targetType, byte targetData) {
+    public FakeBlockPlaceEvent(Player player, FakeBlock replaced, Material targetType, byte targetData) {
         super(replaced, player);
         this.type = targetType;
         this.data = targetData;

@@ -1,6 +1,7 @@
 package com.spleefleague.virtualworld.protocol;
 
 import com.comphenix.packetwrapper.WrapperPlayClientBlockPlace;
+import com.comphenix.packetwrapper.WrapperPlayClientUseItem;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
@@ -9,10 +10,12 @@ import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeBlock;
+import com.spleefleague.virtualworld.api.FakeWorld;
 import com.spleefleague.virtualworld.api.implementation.BlockChange;
-import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
+import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.event.FakeBlockPlaceEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -29,14 +32,28 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
     private final FakeWorldManager fwmanager;
 
     public PacketBlockPlaceAdapter(FakeWorldManager fwmanager) {
-        super(VirtualWorld.getInstance(), ListenerPriority.NORMAL, new PacketType[]{PacketType.Play.Client.BLOCK_PLACE});
+        super(VirtualWorld.getInstance(), ListenerPriority.NORMAL, new PacketType[]{PacketType.Play.Client.USE_ITEM});
         this.fwmanager = fwmanager;
     }
 
     @Override
     public void onPacketReceiving(PacketEvent event) {
         Player player = event.getPlayer();
-        WrapperPlayClientBlockPlace wrapper = new WrapperPlayClientBlockPlace(event.getPacket());
+        WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event.getPacket());
+        Vector direction = new Vector(0, 0, 0);
+        switch(wrapper.getFace()) {
+            case UP: direction.setY(1); break;
+            case DOWN: direction.setY(-1); break;
+            case NORTH: direction.setZ(-1); break;
+            case SOUTH: direction.setZ(1); break;
+            case WEST: direction.setX(-1); break;
+            case EAST: direction.setX(1); break;
+        }
+        Location placeLocation = wrapper
+                .getLocation()
+                .toVector()
+                .add(direction)
+                .toLocation(player.getWorld());
         ItemStack handItem;
         if(wrapper.getHand() == Hand.MAIN_HAND) {
             handItem = player.getInventory().getItemInMainHand();
@@ -47,29 +64,31 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
         if(!handItem.getType().isBlock()) {
             return;
         }
-        Location loc = getPlaceLocation(player, 5);
-        if(loc == null) {
-            return;
-        }
-        FakeWorldBase targetWorld = fwmanager.getWorldAt(player, player.getWorld(), loc);
-        if(targetWorld == null) {
-            //Dispatch real block place 
-        }
-        else {
-            FakeBlockPlaceEvent placeEvent = new FakeBlockPlaceEvent(player, targetWorld.getBlockAt(loc), handItem.getType(), handItem.getData().getData());
+        FakeWorld targetWorld = fwmanager.getWorldAt(player, player.getWorld(), placeLocation);
+        if(targetWorld != null) {
+            event.setCancelled(true);
+            FakeBlockPlaceEvent placeEvent = new FakeBlockPlaceEvent(player, targetWorld.getBlockAt(placeLocation), handItem.getType(), handItem.getData().getData());
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 Bukkit.getPluginManager().callEvent(placeEvent);
                 if(placeEvent.isCancelled()) {
                     Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                        player.sendBlockChange(new Location(player.getWorld(), loc.getX(), loc.getY(), loc.getZ()), placeEvent.getBlock().getType(), placeEvent.getBlock().getData());
+                        player.sendBlockChange(new Location(player.getWorld(), placeLocation.getX(), placeLocation.getY(), placeLocation.getZ()), Material.AIR, (byte)0);
                     }, 1);
                     return;
                 }
-                placeEvent.getBlock()._setType(Material.AIR);
-                placeEvent.getBlock()._setData((byte)0);
-                placeEvent.getBlock().registerChanged(BlockChange.ChangeType.PLACE);
-                handItem.setAmount(handItem.getAmount() - 1);
+                FakeBlockBase eventBlock = (FakeBlockBase)placeEvent.getBlock();
+                eventBlock._setType(handItem.getType());
+                eventBlock._setData(handItem.getData().getData());
+                eventBlock.registerChanged(BlockChange.ChangeType.PLACE);
+                if(player.getGameMode() != GameMode.CREATIVE) {
+                    handItem.setAmount(handItem.getAmount() - 1);
+                }
             });
+        }
+        else {
+            Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
+                player.sendBlockChange(new Location(player.getWorld(), placeLocation.getX(), placeLocation.getY(), placeLocation.getZ()), Material.AIR, (byte)0);
+            }, 1);
         }
     }
 

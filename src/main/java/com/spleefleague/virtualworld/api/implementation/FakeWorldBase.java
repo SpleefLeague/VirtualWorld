@@ -23,7 +23,7 @@ public class FakeWorldBase implements FakeWorld {
     private final Area area;
     private final Collection<BlockChange> changes;
     
-    private FakeWorldBase(World world, Area area) {
+    public FakeWorldBase(World world, Area area) {
         this.chunks = new HashMap<>();
         this.changes = new HashSet<>();
         this.handle = world;
@@ -81,14 +81,6 @@ public class FakeWorldBase implements FakeWorld {
         }
     }
     
-    public Collection<FakeBlockBase> getUsedBlocks() {
-        return chunks
-                .values()
-                .stream()
-                .flatMap(fc -> fc.getUsedBlocks().stream())
-                .collect(Collectors.toSet());
-    }
-
     @Override
     public World getHandle() {
         return handle;
@@ -116,8 +108,12 @@ public class FakeWorldBase implements FakeWorld {
     }
 
     @Override
-    public Collection<? extends FakeBlock> getUsedBlock() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Collection<FakeBlockBase> getUsedBlocks() {
+        return chunks
+                .values()
+                .stream()
+                .flatMap(fc -> fc.getUsedBlocks().stream())
+                .collect(Collectors.toSet());
     }
 
     @Override

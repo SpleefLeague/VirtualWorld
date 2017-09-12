@@ -74,7 +74,7 @@ public class FakeBlockBase implements FakeBlock {
 
     @Override
     public void setType(Material type, boolean force) {
-        if(!force && getHandle().getType() == Material.AIR) return;
+        if(!force && getHandle().getType() != Material.AIR) return;
         _setType(type);
         registerChanged(ChangeType.PLUGIN);
     }
@@ -90,7 +90,7 @@ public class FakeBlockBase implements FakeBlock {
     
     @Override
     public void setData(byte data, boolean force) {
-        if(!force && getHandle().getType() == Material.AIR) return;
+        if(!force && getHandle().getType() != Material.AIR) return;
         _setData(data);
         registerChanged(ChangeType.PLUGIN);
     }

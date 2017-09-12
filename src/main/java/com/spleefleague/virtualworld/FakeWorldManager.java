@@ -6,11 +6,11 @@
 package com.spleefleague.virtualworld;
 
 import com.spleefleague.virtualworld.api.implementation.BlockChange;
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
-import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
+import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
+import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,7 +33,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
  */
 public class FakeWorldManager implements Listener {
     
-    private final Map<Player, Map<FakeWorldBase, Integer>> observedWorlds;
+    private final Map<Player, Map<FakeWorld, Integer>> observedWorlds;
     private final MultiBlockChangeHandler mbchandler;
     
     private FakeWorldManager(MultiBlockChangeHandler mbchandler) {
@@ -41,19 +41,19 @@ public class FakeWorldManager implements Listener {
         this.mbchandler = mbchandler;
     }
     
-    public Collection<FakeBlockBase> getBlocksInChunk(Player player, int x, int z) {
+    public Collection<FakeBlock> getBlocksInChunk(Player player, int x, int z) {
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
-                .map(e -> e.getKey().getChunkAtRaw(x, z))
+                .map(e -> ((FakeWorldBase)e.getKey()).getChunkAtRaw(x, z))
                 .filter(c -> c != null)
                 .flatMap(c -> c.getUsedBlocks().stream())
                 .distinct()
                 .collect(Collectors.toSet());
     }
     
-    public FakeWorldBase getWorldAt(Player player, World world, Location l) {
+    public FakeWorld getWorldAt(Player player, World world, Location l) {
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
@@ -66,11 +66,11 @@ public class FakeWorldManager implements Listener {
                 
     }
     
-    public FakeBlockBase getBlockAt(Player player, Location l) {
+    public FakeBlock getBlockAt(Player player, Location l) {
         return getBlockAt(player, l.getWorld(), l.getBlockX(), l.getBlockY(), l.getBlockZ());
     }
     
-    public FakeBlockBase getBlockAt(Player player, World world, int x, int y, int z) {
+    public FakeBlock getBlockAt(Player player, World world, int x, int y, int z) {
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
@@ -78,26 +78,30 @@ public class FakeWorldManager implements Listener {
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
                 .map(e -> e.getKey())
                 .findFirst()
-                .map(fw -> fw.getBlockAtRaw(x, y, z))
+                .map(fw -> ((FakeWorldBase)fw).getBlockAtRaw(x, y, z))
                 .orElse(null);
     }
     
-    public void addWorld(Player player, FakeWorldBase world, int priority) {
-        Map<FakeWorldBase, Integer> worlds = observedWorlds.get(player);
+    public void addWorld(Player player, FakeWorld world, int priority) {
+        Map<FakeWorld, Integer> worlds = observedWorlds.get(player);
         if(!worlds.containsKey(world)) {
             worlds.put(world, priority);
-            Collection<FakeBlockBase> blocks = world.getUsedBlocks();
+            Collection<FakeBlockBase> blocks = ((FakeWorldBase)world).getUsedBlocks();
             //Send changes
         }
     }
     
-    public void removeWorld(Player player, FakeWorldBase world) {
-        Map<FakeWorldBase, Integer> worlds = observedWorlds.get(player);
+    public void removeWorld(Player player, FakeWorld world) {
+        Map<FakeWorld, Integer> worlds = observedWorlds.get(player);
         if(!worlds.containsKey(world)) {
             worlds.remove(world);
-            Collection<FakeBlockBase> blocks = world.getUsedBlocks();
+            Collection<FakeBlockBase> blocks = ((FakeWorldBase)world).getUsedBlocks();
             //Send changes
         }
+    }
+    
+    public FakeWorld createWorld(World world, Area area) {
+        return new FakeWorldBase(world, area);
     }
     
     @EventHandler
@@ -111,25 +115,42 @@ public class FakeWorldManager implements Listener {
     }
     
     private void startBlockCheckLoop() {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(VirtualWorld.getInstance(), () -> {
+        Bukkit.getScheduler().runTaskTimer(VirtualWorld.getInstance(), () -> {
             for(Player player : observedWorlds.keySet()) {
                 Map<ChangeType, Set<FakeBlock>> changes = getChangesPerPlayer(player);
-                //Send changes
+                sendDirect(player, changes.get(ChangeType.PLUGIN));
+                sendBreak(player, changes.get(ChangeType.BREAK));
+                sendPlace(player, changes.get(ChangeType.PLACE));
             }
             observedWorlds.values()
                     .stream()
                     .flatMap(m -> m.keySet().stream())
-                    .forEach(fw -> fw.getChanges().clear());
+                    .forEach(fw -> ((FakeWorldBase)fw).getChanges().clear());
         }, 0, 1);
+    }
+    
+    private void sendDirect(Player player, Set<FakeBlock> blocks) {
+        if(blocks == null || blocks.isEmpty()) return;
+        mbchandler.changeBlocks(blocks, player);
+    }
+    
+    private void sendBreak(Player player, Set<FakeBlock> blocks) {
+        if(blocks == null || blocks.isEmpty()) return;
+        mbchandler.changeBlocks(blocks, player);
+    }
+    
+    private void sendPlace(Player player, Set<FakeBlock> blocks) {
+        if(blocks == null || blocks.isEmpty()) return;
+        mbchandler.changeBlocks(blocks, player);
     }
     
     private Map<ChangeType, Set<FakeBlock>> getChangesPerPlayer(Player player) {
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
-                .filter(e -> !e.getKey().getChanges().isEmpty())//Ignore empty worlds
+                .filter(e -> !((FakeWorldBase)e.getKey()).getChanges().isEmpty())//Ignore empty worlds
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
-                .flatMap(e -> e.getKey().getChanges().stream())
+                .flatMap(e -> ((FakeWorldBase)e.getKey()).getChanges().stream())
                 .distinct()//FakeBlock.equals is true if the coordinates are the same
                 .collect(Collectors.groupingBy(
                         BlockChange::getType,
@@ -144,6 +165,9 @@ public class FakeWorldManager implements Listener {
     public static FakeWorldManager init(MultiBlockChangeHandler mbchandler) {
         FakeWorldManager manager = new FakeWorldManager(mbchandler);
         manager.startBlockCheckLoop();
+        for(Player p : Bukkit.getOnlinePlayers()) {
+            manager.observedWorlds.put(p, new ConcurrentHashMap<>());
+        }
         Bukkit.getPluginManager().registerEvents(manager, VirtualWorld.getInstance());
         return manager;
     }

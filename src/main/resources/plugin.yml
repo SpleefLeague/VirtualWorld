@@ -1,0 +1,9 @@
+author: SpleefLeague
+authors: [Joba, Manuman]
+description: SpleefLeague FakeBlock handler
+main: com.spleefleague.virtualworld.VirtualWorld
+name: VirtualWorld
+url: http://www.spleefleague.com/
+version: 1.0
+depend: [ProtocolLib]
+loadbefore: [Core]

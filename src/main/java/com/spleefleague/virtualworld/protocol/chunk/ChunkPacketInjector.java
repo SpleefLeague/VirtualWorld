@@ -25,13 +25,13 @@ import org.bukkit.World.Environment;
  */
 public class ChunkPacketInjector {
     
-    public static void setBlocksPacketMapChunk(World world, PacketContainer packetContainer, Collection<FakeBlockBase> chunkBlocks) {
+    public static void setBlocksPacketMapChunk(World world, PacketContainer packetContainer, Collection<FakeBlock> chunkBlocks) {
         if (packetContainer.getHandle() instanceof PacketPlayOutMapChunk) {
             PacketPlayOutMapChunk packet = (PacketPlayOutMapChunk) packetContainer.getHandle();
             WrapperPlayServerMapChunk wpsmc = new WrapperPlayServerMapChunk(packetContainer);
             int x = wpsmc.getChunkX();
             int z = wpsmc.getChunkZ();
-            Map<Integer, Collection<FakeBlockBase>> verified = toSectionMap(chunkBlocks);
+            Map<Integer, Collection<FakeBlock>> verified = toSectionMap(chunkBlocks);
             if (verified.size() > 0) {
                 try {
                     Field arrayField = packet.getClass().getDeclaredField("d");
@@ -99,8 +99,8 @@ public class ChunkPacketInjector {
         baos.write(lightingData);
     }
 
-    private static void insertFakeBlocks(ChunkSection[] sections, Map<Integer, Collection<FakeBlockBase>> blocks) {
-        for (Entry<Integer, Collection<FakeBlockBase>> e : blocks.entrySet()) {
+    private static void insertFakeBlocks(ChunkSection[] sections, Map<Integer, Collection<FakeBlock>> blocks) {
+        for (Entry<Integer, Collection<FakeBlock>> e : blocks.entrySet()) {
             int id = e.getKey();
             ChunkSection section = sections[id];
             for (FakeBlock block : e.getValue()) {
@@ -149,11 +149,11 @@ public class ChunkPacketInjector {
         return new ChunkData(sections, additional);
     }
 
-    private static Map<Integer, Collection<FakeBlockBase>> toSectionMap(Collection<FakeBlockBase> chunkBlocks) {
-        Map<Integer, Collection<FakeBlockBase>> sectionMap = new HashMap<>();
-        for (FakeBlockBase fb : chunkBlocks) {
+    private static Map<Integer, Collection<FakeBlock>> toSectionMap(Collection<FakeBlock> chunkBlocks) {
+        Map<Integer, Collection<FakeBlock>> sectionMap = new HashMap<>();
+        for (FakeBlock fb : chunkBlocks) {
             int section = fb.getY() / 16;
-            Collection<FakeBlockBase> blocks;
+            Collection<FakeBlock> blocks;
             if (!sectionMap.containsKey(section)) {
                 blocks = new HashSet<>();
                 sectionMap.put(section, blocks);

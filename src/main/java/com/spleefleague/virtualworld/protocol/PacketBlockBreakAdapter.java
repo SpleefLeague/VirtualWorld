@@ -16,6 +16,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import net.minecraft.server.v1_12_R1.Block;
+import net.minecraft.server.v1_12_R1.EntityHuman;
+import net.minecraft.server.v1_12_R1.IBlockData;
+import org.bukkit.GameMode;
+import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
 
 /**
  *
@@ -35,11 +40,11 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         WrapperPlayClientBlockDig ppcbd = new WrapperPlayClientBlockDig(event.getPacket());
         BlockPosition loc = ppcbd.getLocation();
         Player p = event.getPlayer();
-        FakeBlockBase affected = fakeWorldManager.getBlockAt(p, p.getLocation().getWorld(), loc.getX(), loc.getY(), loc.getZ());
+        FakeBlockBase affected = (FakeBlockBase)fakeWorldManager.getBlockAt(p, p.getLocation().getWorld(), loc.getX(), loc.getY(), loc.getZ());
         if(affected == null) {
             return;
         }
-        if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK) {
+        if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK || (ppcbd.getStatus() == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 FakeBlockBreakEvent breakEvent = new FakeBlockBreakEvent(affected, event.getPlayer());
                 Bukkit.getPluginManager().callEvent(breakEvent);
@@ -54,5 +59,29 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
                 affected.registerChanged(ChangeType.BREAK);
             });
         }
+    }
+    
+    public boolean isInstantlyDestroyed(Player player, Material type) {
+        if(type == Material.AIR) {
+            return false;
+        }
+        if(player.getGameMode() == GameMode.CREATIVE) {
+            return true;
+        }
+        Block block = Block.getById(type.getId());
+        EntityHuman entityhuman = ((CraftPlayer)player).getHandle();
+        boolean hasBlock = entityhuman.hasBlock(block.getBlockData());
+        float strength = block.a((IBlockData)null, null, null);//Block strength
+        float destructionValue;
+        if(!hasBlock) {
+            destructionValue = entityhuman.b(block.getBlockData()) / strength / 100.0F;
+        }
+        else if(strength <= 0.0F) {
+            destructionValue = 0.0F;
+        }
+        else {
+            destructionValue = entityhuman.b(block.getBlockData()) / strength / 30.0F;
+        }
+        return destructionValue >= 1.0F;
     }
 }

@@ -5,7 +5,7 @@
  */
 package com.spleefleague.virtualworld.event;
 
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
+import com.spleefleague.virtualworld.api.FakeBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
@@ -16,7 +16,7 @@ import org.bukkit.event.HandlerList;
 public class FakeBlockBreakEvent extends FakeBlockEvent{
     private static final HandlerList handlers = new HandlerList();
 
-    public FakeBlockBreakEvent(FakeBlockBase block, Player player) {
+    public FakeBlockBreakEvent(FakeBlock block, Player player) {
         super(block, player);
     }
     

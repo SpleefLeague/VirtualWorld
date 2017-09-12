@@ -5,7 +5,7 @@
  */
 package com.spleefleague.virtualworld.event;
 
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
+import com.spleefleague.virtualworld.api.FakeBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -18,10 +18,10 @@ import org.bukkit.event.HandlerList;
 public abstract class FakeBlockEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Player player;
-    private final FakeBlockBase block;
+    private final FakeBlock block;
     private boolean cancelled = false;
 
-    public FakeBlockEvent(FakeBlockBase block, Player player) {
+    public FakeBlockEvent(FakeBlock block, Player player) {
         this.player = player;
         this.block = block;
     }
@@ -30,7 +30,7 @@ public abstract class FakeBlockEvent extends Event implements Cancellable {
         return player;
     }
 
-    public FakeBlockBase getBlock() {
+    public FakeBlock getBlock() {
         return block;
     }
 
