@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.util.Vector;
 
 /**
  *
@@ -59,6 +61,16 @@ public class FakeWorldBase implements FakeWorld {
         }
     }
     
+    @Override
+    public FakeBlockBase getBlockAt(Location loc) {
+        return getBlockAt(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+    @Override
+    public FakeBlockBase getBlockAt(Vector vec) {
+        return getBlockAt(vec.getBlockX(), vec.getBlockY(), vec.getBlockZ());
+    }
+    
+    
     public FakeBlockBase getBlockAtRaw(int x, int y, int z) {
         FakeChunkBase chunk = getChunkAtRaw(x / 16, z / 16);
         if(chunk != null) {
@@ -106,5 +118,10 @@ public class FakeWorldBase implements FakeWorld {
     @Override
     public Collection<? extends FakeBlock> getUsedBlock() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Area getArea() {
+        return area;
     }
 }

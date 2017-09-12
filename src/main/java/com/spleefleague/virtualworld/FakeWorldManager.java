@@ -10,6 +10,7 @@ import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
+import com.spleefleague.virtualworld.api.FakeWorld;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import java.util.Collection;
 import java.util.HashMap;
@@ -50,6 +51,19 @@ public class FakeWorldManager implements Listener {
                 .flatMap(c -> c.getUsedBlocks().stream())
                 .distinct()
                 .collect(Collectors.toSet());
+    }
+    
+    public FakeWorldBase getWorldAt(Player player, World world, Location l) {
+        return observedWorlds.get(player)
+                .entrySet()
+                .stream()
+                .filter(e -> e.getKey().getHandle() == world)
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
+                .map(e -> e.getKey())
+                .filter(fw -> fw.getArea().isInside(l.toVector()))
+                .findFirst()
+                .orElse(null);
+                
     }
     
     public FakeBlockBase getBlockAt(Player player, Location l) {
