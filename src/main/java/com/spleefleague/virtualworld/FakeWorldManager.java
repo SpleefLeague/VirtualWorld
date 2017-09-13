@@ -73,7 +73,6 @@ public class FakeWorldManager implements Listener {
     }
     
     public FakeBlock getBlockAt(Player player, World world, int x, int y, int z) {
-        System.out.println("Getting " + x + " " + y + " " + z + " " + player + " " + world);
         FakeBlock fb =  observedWorlds.get(player)
                 .entrySet()
                 .stream()
@@ -84,7 +83,6 @@ public class FakeWorldManager implements Listener {
                 .filter(o -> o != null)
                 .findFirst()
                 .orElse(null);
-        System.out.println(fb);
         return fb;
     }
     
@@ -159,9 +157,6 @@ public class FakeWorldManager implements Listener {
                 .flatMap(e -> ((FakeWorldBase)e.getKey()).getChanges().stream())
                 //.distinct()
                 .filter(bc -> {
-                    System.out.println(this.getBlockAt(player, bc.getBlock().getLocation()));
-                    System.out.println(bc.getBlock());
-                    System.out.println(bc.getBlock().getWorld().getBlockAtRaw(bc.getBlock().getX(), bc.getBlock().getY(), bc.getBlock().getZ()));
                     return this.getBlockAt(player, bc.getBlock().getLocation()) == bc.getBlock();
                             
                             })//Makes the previous distinct redundant, but is slower

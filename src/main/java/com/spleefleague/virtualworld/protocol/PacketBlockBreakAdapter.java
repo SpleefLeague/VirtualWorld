@@ -44,7 +44,6 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         if(affected == null) {
             return;
         }
-        System.out.println("It exists");
         if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK || (ppcbd.getStatus() == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 FakeBlockBreakEvent breakEvent = new FakeBlockBreakEvent(affected, event.getPlayer());
@@ -78,11 +77,11 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
             destructionValue = entityhuman.b(block.getBlockData()) / strength / 100.0F;
         }
         else if(strength <= 0.0F) {
-            destructionValue = 0.0F;
+            return false;
         }
         else {
             destructionValue = entityhuman.b(block.getBlockData()) / strength / 30.0F;
         }
-        return destructionValue >= 1.0F;
+        return destructionValue >= 0.2F;
     }
 }
