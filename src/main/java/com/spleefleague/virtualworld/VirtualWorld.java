@@ -8,8 +8,6 @@ package com.spleefleague.virtualworld;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.spleefleague.virtualworld.api.FakeWorld;
-import com.spleefleague.virtualworld.event.FakeBlockBreakEvent;
-import com.spleefleague.virtualworld.event.FakeBlockPlaceEvent;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import com.spleefleague.virtualworld.protocol.PacketBlockBreakAdapter;
 import com.spleefleague.virtualworld.protocol.PacketBlockInteractAdapter;

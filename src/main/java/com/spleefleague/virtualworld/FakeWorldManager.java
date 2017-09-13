@@ -9,14 +9,12 @@ import com.spleefleague.virtualworld.api.implementation.BlockChange;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
+import com.spleefleague.virtualworld.api.implementation.FakeBlockPrototype;
 import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -73,7 +71,6 @@ public class FakeWorldManager implements Listener {
     }
     
     public FakeBlock getBlockAt(Player player, World world, int x, int y, int z) {
-        System.out.println("Getting " + x + " " + y + " " + z + " " + player + " " + world);
         FakeBlock fb =  observedWorlds.get(player)
                 .entrySet()
                 .stream()
@@ -84,7 +81,6 @@ public class FakeWorldManager implements Listener {
                 .filter(o -> o != null)
                 .findFirst()
                 .orElse(null);
-        System.out.println(fb);
         return fb;
     }
     
@@ -92,8 +88,11 @@ public class FakeWorldManager implements Listener {
         Map<FakeWorld, Integer> worlds = observedWorlds.get(player);
         if(!worlds.containsKey(world)) {
             worlds.put(world, priority);
-            Collection<FakeBlockBase> blocks = ((FakeWorldBase)world).getUsedBlocks();
-            //Send changes
+            Collection<FakeBlock> newChanges = ((FakeWorldBase)world).getUsedBlocks()
+                    .stream()
+                    .filter(fb -> getBlockAt(player, fb.getLocation()).getWorld() == world)
+                    .collect(Collectors.toSet());
+            sendDirect(player, newChanges);
         }
     }
     
@@ -101,9 +100,25 @@ public class FakeWorldManager implements Listener {
         Map<FakeWorld, Integer> worlds = observedWorlds.get(player);
         if(!worlds.containsKey(world)) {
             worlds.remove(world);
-            Collection<FakeBlockBase> blocks = ((FakeWorldBase)world).getUsedBlocks();
-            //Send changes
+            Collection<FakeBlock> newChanges =((FakeWorldBase)world).getUsedBlocks()
+                    .stream()
+                    .map(fb -> {
+                        FakeBlock replacement = getBlockAt(player, fb.getLocation());
+                        if(replacement == null) {
+                            //Fake block only to be used to hold location + material.
+                            replacement = new FakeBlockPrototype(null, fb.getX(), fb.getY(), fb.getZ());
+                            replacement.setType(replacement.getHandle().getType());
+                            replacement.setData(replacement.getHandle().getData());
+                        }
+                        return replacement;
+                    })
+                    .collect(Collectors.toSet());
+            sendDirect(player, newChanges);
         }
+    }
+    
+    public FakeWorld createWorld(World world) {
+        return createWorld(world, null);
     }
     
     public FakeWorld createWorld(World world, Area area) {
@@ -135,17 +150,17 @@ public class FakeWorldManager implements Listener {
         }, 0, 1);
     }
     
-    private void sendDirect(Player player, Set<FakeBlock> blocks) {
+    private void sendDirect(Player player, Collection<? extends FakeBlock> blocks) {
         if(blocks == null || blocks.isEmpty()) return;
         mbchandler.changeBlocks(blocks, player);
     }
     
-    private void sendBreak(Player player, Set<FakeBlock> blocks) {
+    private void sendBreak(Player player, Collection<? extends FakeBlock> blocks) {
         if(blocks == null || blocks.isEmpty()) return;
         mbchandler.changeBlocks(blocks, player);
     }
     
-    private void sendPlace(Player player, Set<FakeBlock> blocks) {
+    private void sendPlace(Player player, Collection<? extends FakeBlock> blocks) {
         if(blocks == null || blocks.isEmpty()) return;
         mbchandler.changeBlocks(blocks, player);
     }
@@ -157,14 +172,7 @@ public class FakeWorldManager implements Listener {
                 .filter(e -> !((FakeWorldBase)e.getKey()).getChanges().isEmpty())//Ignore empty worlds
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
                 .flatMap(e -> ((FakeWorldBase)e.getKey()).getChanges().stream())
-                //.distinct()
-                .filter(bc -> {
-                    System.out.println(this.getBlockAt(player, bc.getBlock().getLocation()));
-                    System.out.println(bc.getBlock());
-                    System.out.println(bc.getBlock().getWorld().getBlockAtRaw(bc.getBlock().getX(), bc.getBlock().getY(), bc.getBlock().getZ()));
-                    return this.getBlockAt(player, bc.getBlock().getLocation()) == bc.getBlock();
-                            
-                            })//Makes the previous distinct redundant, but is slower
+                .filter(bc -> this.getBlockAt(player, bc.getBlock().getLocation()) == bc.getBlock())
                 .collect(Collectors.groupingBy(
                         BlockChange::getType,
                         HashMap::new,

@@ -1,16 +1,13 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.Area;
-import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
@@ -34,8 +31,10 @@ public class FakeWorldBase implements FakeWorld {
     
     @Override
     public FakeChunkBase getChunkAt(int x, int z) {
-        if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) return null;
-        if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) return null;
+        if(area != null) {
+            if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) return null;
+            if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) return null;
+        }
         long key = getKey(x, z);
         FakeChunkBase chunk = chunks.get(key);
         if(chunk == null) {
@@ -46,8 +45,10 @@ public class FakeWorldBase implements FakeWorld {
     }
     
     public FakeChunkBase getChunkAtRaw(int x, int z) {
-        if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) return null;
-        if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) return null;
+        if(area != null) {
+            if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) return null;
+            if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) return null;
+        }
         long key = getKey(x, z);
         return chunks.get(key);
     }
@@ -93,12 +94,6 @@ public class FakeWorldBase implements FakeWorld {
     }
     
     public void clearChanges() {
-        Set<FakeBlock> removeable = changes.stream()
-                .map(BlockChange::getBlock)
-                .filter(b -> b.getHandle().getType() == b.getType() && b.getHandle().getData() == b.getData())
-                .collect(Collectors.toSet());
-        chunks.values().forEach(fc -> fc.removeAll(removeable));
-        chunks.values().removeIf(FakeChunkBase::isEmpty);
         changes.clear();
     }
 
