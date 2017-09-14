@@ -8,8 +8,6 @@ package com.spleefleague.virtualworld;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.spleefleague.virtualworld.api.FakeWorld;
-import com.spleefleague.virtualworld.event.FakeBlockBreakEvent;
-import com.spleefleague.virtualworld.event.FakeBlockPlaceEvent;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import com.spleefleague.virtualworld.protocol.PacketBlockBreakAdapter;
 import com.spleefleague.virtualworld.protocol.PacketBlockInteractAdapter;
@@ -47,29 +45,6 @@ public class VirtualWorld extends JavaPlugin implements Listener {
         manager.addPacketListener(new PacketBlockBreakAdapter(fakeWorldManager));
         manager.addPacketListener(new PacketBlockInteractAdapter(fakeWorldManager));
         manager.addPacketListener(new PacketBlockPlaceAdapter(fakeWorldManager));
-        Bukkit.getPluginManager().registerEvents(this, this);
-        Vector lo = new Vector (100, 100, 100);
-        Vector hi = new Vector (130, 130, 130);
-        Area area = new Area(hi, lo);
-        test = VirtualWorld.getInstance().getFakeWorldManager().createWorld(Bukkit.getWorlds().get(0), area);
-        for (int x = 100; x < 120; x++) {
-            for (int y = 100; y < 120; y++) {
-                for (int z = 100; z < 120; z++) {
-                    test.getBlockAt(x, y, z).setType(Material.SNOW_BLOCK);
-                }
-            }
-        }
-        lo = new Vector (110, 110, 110);
-        hi = new Vector (140, 140, 140);
-        area = new Area(hi, lo);
-        test2 = VirtualWorld.getInstance().getFakeWorldManager().createWorld(Bukkit.getWorlds().get(0), area);
-        for (int x = 110; x < 130; x++) {
-            for (int y = 110; y < 130; y++) {
-                for (int z = 110; z < 130; z++) {
-                    test2.getBlockAt(x, y, z).setType(Material.GLASS);
-                }
-            }
-        }
     }
     
     public ProtocolManager getProtocolManager() {
@@ -87,11 +62,13 @@ public class VirtualWorld extends JavaPlugin implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        fakeWorldManager.addWorld(player, test, 0);
-        fakeWorldManager.addWorld(player, test2, 1);
-        FakeWorld tmp = test;
+        FakeWorld fst = test, snd = test2;
         test = test2;
-        test2 = tmp;
+        test2 = fst;
+        fakeWorldManager.addWorld(player, fst, 1);
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            fakeWorldManager.addWorld(player, snd, 0);
+        }, 10 * 20);
     }
     
 //    @EventHandler

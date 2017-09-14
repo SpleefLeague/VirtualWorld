@@ -5,7 +5,6 @@ import com.spleefleague.virtualworld.api.FakeBlock;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.util.Vector;
 
 /**
  *
@@ -18,14 +17,16 @@ public class FakeBlockBase implements FakeBlock {
     private Material type;
     private byte data;
 
-    protected FakeBlockBase(FakeChunkBase chunk, int x, int y, int z) {
+    public FakeBlockBase(FakeChunkBase chunk, int x, int y, int z) {
         this.chunk = chunk;
         this.x = x;
         this.y = y;
         this.z = z;
-        Block handle = getHandle();
-        this.type = handle.getType();
-        this.data = handle.getData();
+        if(chunk != null) {
+            Block handle = getHandle();
+            this.type = handle.getType();
+            this.data = handle.getData();
+        }
     }
     
     @Override

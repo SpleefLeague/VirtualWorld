@@ -62,11 +62,11 @@ public class MultiBlockChangeHandler implements Listener {
         }
     }
 
-    public void changeBlocks(Collection<FakeBlock> blocks, Player... affected) {
+    public void changeBlocks(Collection<? extends FakeBlock> blocks, Player... affected) {
         changeBlocks(blocks, Arrays.asList(affected));
     }
 
-    public void changeBlocks(Collection<FakeBlock> blocks, Collection<Player> affected) {
+    public void changeBlocks(Collection<? extends FakeBlock> blocks, Collection<Player> affected) {
         HashMap<Chunk, MultiBlockChangeData> changes = new HashMap<>();
         if (blocks != null) {
             for (FakeBlock block : blocks) {

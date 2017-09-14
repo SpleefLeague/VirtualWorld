@@ -46,7 +46,8 @@ public class FakeChunkBase implements FakeChunk {
     
     @Override
     public FakeBlockBase getBlock(int x, int y, int z) {
-        if(!area.isInside(new Vector(this.x * 16 + x, y, this.z * 16 + z))) {
+        //System.out.println(new Vector(this.x * 16 + x, y, this.z * 16 + z));
+        if(area != null && !area.isInside(new Vector(this.x * 16 + x, y, this.z * 16 + z))) {
             return null;
         }
         int key = getKey(x, y, z);
@@ -59,7 +60,7 @@ public class FakeChunkBase implements FakeChunk {
     }
 
     protected FakeBlockBase getBlockRaw(int x, int y, int z) {
-        if(!area.isInside(new Vector(this.x * 16 + x, y, this.z * 16 + z))) {
+        if(area != null && !area.isInside(new Vector(this.x * 16 + x, y, this.z * 16 + z))) {
             return null;
         }
         int key = getKey(x, y, z);
@@ -77,12 +78,6 @@ public class FakeChunkBase implements FakeChunk {
     
     protected void notifyChange(BlockChange change) {
         world.notifyChange(change);
-    }
-    
-    protected void removeAll(Collection<FakeBlock> removeable) {
-        this.blocks.keySet().removeAll(removeable.stream()
-                .map(fb -> getKey(fb.getX(), fb.getY(), fb.getZ()))
-                .collect(Collectors.toSet()));
     }
 
     @Override

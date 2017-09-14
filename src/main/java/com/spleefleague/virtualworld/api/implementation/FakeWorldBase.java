@@ -1,16 +1,13 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.Area;
-import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
@@ -34,8 +31,7 @@ public class FakeWorldBase implements FakeWorld {
     
     @Override
     public FakeChunkBase getChunkAt(int x, int z) {
-        if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) return null;
-        if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) return null;
+        if(!isInside(x, z)) return null;
         long key = getKey(x, z);
         FakeChunkBase chunk = chunks.get(key);
         if(chunk == null) {
@@ -46,15 +42,44 @@ public class FakeWorldBase implements FakeWorld {
     }
     
     public FakeChunkBase getChunkAtRaw(int x, int z) {
-        if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) return null;
-        if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) return null;
+        if(!isInside(x, z)) return null;
         long key = getKey(x, z);
         return chunks.get(key);
     }
     
+    private boolean isInside(int x, int z) {
+        if(area != null) {
+            if(!area.isInsideX(x * 16) && !area.isInsideX(x * 16 + 15)) {
+                if(x < 0) {
+                    if(area.getHigh().getX() < x * 16 || area.getLow().getX() > x * 16 + 15) {
+                        return false;
+                    }
+                }
+                else {
+                    if(area.getLow().getX() < x * 16 || area.getHigh().getX() > x * 16 + 15) {
+                        return false;
+                    }
+                }
+            }
+            if(!area.isInsideZ(z * 16) && !area.isInsideZ(z * 16 + 15)) {
+                if(z < 0) {
+                    if(area.getHigh().getZ() < z * 16 || area.getLow().getZ() > z * 16 + 15) {
+                        return false;
+                    }
+                }
+                else {
+                    if(area.getLow().getZ() < z * 16 || area.getHigh().getZ() > z * 16 + 15) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    
     @Override
     public FakeBlockBase getBlockAt(int x, int y, int z) {
-        FakeChunkBase chunk = getChunkAt(x / 16, z / 16);
+        FakeChunkBase chunk = getChunkAt(x >> 4, z >> 4);
         if(chunk != null) {
             return chunk.getBlock(x & 15, y, z & 15);
         }
@@ -74,7 +99,7 @@ public class FakeWorldBase implements FakeWorld {
     
     
     public FakeBlockBase getBlockAtRaw(int x, int y, int z) {
-        FakeChunkBase chunk = getChunkAtRaw(x / 16, z / 16);
+        FakeChunkBase chunk = getChunkAtRaw(x >> 4, z >> 4);
         if(chunk != null) {
             return chunk.getBlockRaw(x & 15, y, z & 15);
         }
@@ -93,12 +118,6 @@ public class FakeWorldBase implements FakeWorld {
     }
     
     public void clearChanges() {
-        Set<FakeBlock> removeable = changes.stream()
-                .map(BlockChange::getBlock)
-                .filter(b -> b.getHandle().getType() == b.getType() && b.getHandle().getData() == b.getData())
-                .collect(Collectors.toSet());
-        chunks.values().forEach(fc -> fc.removeAll(removeable));
-        chunks.values().removeIf(FakeChunkBase::isEmpty);
         changes.clear();
     }
 
@@ -107,8 +126,8 @@ public class FakeWorldBase implements FakeWorld {
     }
     
     private long getKey(int x, int z) {
-        long key = x;
-        return key << 32 | z;
+        long key = Integer.toUnsignedLong(x);
+        return key << 32 | Integer.toUnsignedLong(z);
     }
 
     @Override
