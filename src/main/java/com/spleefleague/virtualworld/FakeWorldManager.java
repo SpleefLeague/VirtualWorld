@@ -24,6 +24,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -91,17 +92,14 @@ public class FakeWorldManager implements Listener {
             worlds.put(world, priority);
             Collection<FakeBlock> newChanges = ((FakeWorldBase)world).getUsedBlocks()
                     .stream()
-                    .filter(fb -> {
-                        if(world.getBlockAt(fb.getLocation()) == null) {
-                            System.out.println(world.getArea().getHigh());
-                            System.out.println(world.getArea().getLow());
-                            System.out.println(fb.getLocation().toVector());
-                        }
-                        return getBlockAt(player, fb.getLocation()).getWorld() == world;
-                    })
+                    .filter(fb -> getBlockAt(player, fb.getLocation()).getWorld() == world)
                     .collect(Collectors.toSet());
             sendDirect(player, newChanges);
         }
+    }
+    
+    public void removeWorld(FakeWorld world) {
+        observedWorlds.keySet().forEach(p -> removeWorld(p, world));
     }
     
     public void removeWorld(Player player, FakeWorld world) {
@@ -133,12 +131,12 @@ public class FakeWorldManager implements Listener {
         return new FakeWorldBase(world, area);
     }
     
-    @EventHandler
-    public void onJoin(PlayerQuitEvent event) {
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(PlayerQuitEvent event) {
         observedWorlds.remove(event.getPlayer());
     }
     
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
         observedWorlds.put(event.getPlayer(), new ConcurrentHashMap<>());
     }
