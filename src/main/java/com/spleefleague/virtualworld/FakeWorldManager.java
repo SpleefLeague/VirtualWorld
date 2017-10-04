@@ -13,15 +13,27 @@ import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.api.implementation.FakeChunkBase;
 import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import net.minecraft.server.v1_12_R1.EntityPlayer;
+import net.minecraft.server.v1_12_R1.Packet;
+import net.minecraft.server.v1_12_R1.PacketPlayOutWorldEvent;
+import net.minecraft.server.v1_12_R1.SoundEffectType;
+import net.minecraft.server.v1_12_R1.SoundCategory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -164,12 +176,25 @@ public class FakeWorldManager implements Listener {
     private void sendBreak(Player player, Collection<? extends FakeBlock> blocks) {
         if(blocks == null || blocks.isEmpty()) return;
         mbchandler.changeBlocks(blocks, player);
+        EntityPlayer entity = ((CraftPlayer) player).getHandle();
+        for(FakeBlock block : blocks) {
+            SoundEffectType effectType = breakSounds.get(block.getType());
+            entity.a(effectType.d(), effectType.a() * 0.15f, effectType.b());
+            PacketPlayOutWorldEvent particles = new PacketPlayOutWorldEvent(2001, new net.minecraft.server.v1_12_R1.BlockPosition(block.getX(), block.getY(), block.getZ()), block.getType().getId(), false);
+            entity.playerConnection.sendPacket((Packet) particles);
+        }
     }
     
     private void sendPlace(Player player, Collection<? extends FakeBlock> blocks) {
         if(blocks == null || blocks.isEmpty()) return;
         mbchandler.changeBlocks(blocks, player);
-    }
+        net.minecraft.server.v1_12_R1.World world = ((CraftWorld)player.getWorld()).getHandle();
+        EntityPlayer entity = ((CraftPlayer) player).getHandle();
+        for(FakeBlock block : blocks) {
+            SoundEffectType effectType = breakSounds.get(block.getType());
+            world.a(entity, new net.minecraft.server.v1_12_R1.BlockPosition(block.getX(), block.getY(), block.getZ()), effectType.e(), SoundCategory.BLOCKS, (effectType.a() + 1.0F) / 2.0F, effectType.b() * 0.8F);
+        }
+    }   
     
     private Map<ChangeType, Set<FakeBlock>> getChangesPerPlayer(Player player) {
         return observedWorlds.get(player)
@@ -189,7 +214,10 @@ public class FakeWorldManager implements Listener {
                 ));
     }
     
+    private static Map<Material, SoundEffectType> breakSounds;
+    
     public static FakeWorldManager init(MultiBlockChangeHandler mbchandler) {
+        breakSounds = generateBreakSounds();
         FakeWorldManager manager = new FakeWorldManager(mbchandler);
         manager.startBlockCheckLoop();
         for(Player p : Bukkit.getOnlinePlayers()) {
@@ -197,5 +225,20 @@ public class FakeWorldManager implements Listener {
         }
         Bukkit.getPluginManager().registerEvents(manager, VirtualWorld.getInstance());
         return manager;
+    }
+    
+    private static Map<Material, SoundEffectType> generateBreakSounds() {
+        Map<Material, SoundEffectType> breakSounds = new HashMap<>();
+        for (net.minecraft.server.v1_12_R1.Block block : net.minecraft.server.v1_12_R1.Block.REGISTRY) {
+            try {
+                Field effectField = net.minecraft.server.v1_12_R1.Block.class.getDeclaredField("stepSound");
+                effectField.setAccessible(true);
+                SoundEffectType effectType = (SoundEffectType) effectField.get((Object) block);
+                breakSounds.put(CraftMagicNumbers.getMaterial((net.minecraft.server.v1_12_R1.Block) block), effectType);
+            } catch (IllegalAccessException | IllegalArgumentException | NoSuchFieldException | SecurityException ex) {
+                Logger.getLogger(FakeWorldManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return breakSounds;
     }
 }
