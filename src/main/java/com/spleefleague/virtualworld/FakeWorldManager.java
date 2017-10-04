@@ -5,6 +5,8 @@
  */
 package com.spleefleague.virtualworld;
 
+import com.comphenix.packetwrapper.WrapperPlayServerWorldEvent;
+import com.comphenix.protocol.wrappers.BlockPosition;
 import com.spleefleague.virtualworld.api.implementation.BlockChange;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
@@ -19,12 +21,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import net.minecraft.server.v1_12_R1.EntityPlayer;
-import net.minecraft.server.v1_12_R1.Packet;
-import net.minecraft.server.v1_12_R1.PacketPlayOutWorldEvent;
 import net.minecraft.server.v1_12_R1.SoundEffectType;
 import net.minecraft.server.v1_12_R1.SoundCategory;
 import org.bukkit.Bukkit;
@@ -63,8 +65,14 @@ public class FakeWorldManager implements Listener {
                 .map(e -> ((FakeWorldBase)e.getKey()).getChunkAtRaw(x, z))
                 .filter(c -> c != null)
                 .flatMap(c -> c.getUsedBlocks().stream())
-                .distinct()
+                /*This might need extra verification*/
+                .filter(distinctByKey(fb -> (0xFF & (long)fb.getY()) | (0xFFFFFFF & (long)fb.getX() << 8) | (0xFFFFFFF & (long)fb.getZ()) << 36))
                 .collect(Collectors.toSet());
+    }
+    
+    private static <T> Predicate<T> distinctByKey(Function<? super T,Object> keyExtractor) {
+        Map<Object,Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.put(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
     
     public FakeWorld getWorldAt(Player player, Location l) {
@@ -155,12 +163,29 @@ public class FakeWorldManager implements Listener {
     
     private void startBlockCheckLoop() {
         Bukkit.getScheduler().runTaskTimer(VirtualWorld.getInstance(), () -> {
+            Map<FakeBlock, FakeBlockBase> breakData = new HashMap<>();
             for(Player player : observedWorlds.keySet()) {
                 Map<ChangeType, Set<FakeBlock>> changes = getChangesPerPlayer(player);
                 sendDirect(player, changes.get(ChangeType.PLUGIN));
-                sendBreak(player, changes.get(ChangeType.BREAK));
                 sendPlace(player, changes.get(ChangeType.PLACE));
+                //Saving temporary block data to process block break effects
+                Set<FakeBlock> breakChanges = changes.get(ChangeType.BREAK);
+                if(breakChanges == null || breakChanges.isEmpty()) continue;
+                for(FakeBlock block : changes.get(ChangeType.BREAK)) {
+                    if(breakData.containsKey(block)) continue;
+                    FakeBlockBase base = new FakeBlockBase(null, block.getX(), block.getY(), block.getZ());
+                    base._setData(block.getData());
+                    base._setType(block.getType());
+                    breakData.put(block, base);
+                }
+                sendBreak(player, changes.get(ChangeType.BREAK));
+                sendBreakSounds(player, changes.get(ChangeType.BREAK)
+                        .stream()
+                        .map(breakData::get)
+                        .collect(Collectors.toSet())
+                );
             }
+            
             observedWorlds.values()
                     .stream()
                     .flatMap(m -> m.keySet().stream())
@@ -175,13 +200,22 @@ public class FakeWorldManager implements Listener {
     
     private void sendBreak(Player player, Collection<? extends FakeBlock> blocks) {
         if(blocks == null || blocks.isEmpty()) return;
+        blocks.forEach(fb -> {
+            FakeBlockBase base = (FakeBlockBase)fb;
+            base._setData((byte)0);
+            base._setType(Material.AIR);
+        });
         mbchandler.changeBlocks(blocks, player);
-        EntityPlayer entity = ((CraftPlayer) player).getHandle();
+    }
+    
+    private void sendBreakSounds(Player player, Collection<? extends FakeBlock> blocks) {
+        if(blocks == null || blocks.isEmpty()) return;
+        WrapperPlayServerWorldEvent wpsew = new WrapperPlayServerWorldEvent();
+        wpsew.setEffectId(2001);
         for(FakeBlock block : blocks) {
-            SoundEffectType effectType = breakSounds.get(block.getType());
-            entity.a(effectType.d(), effectType.a() * 0.15f, effectType.b());
-            PacketPlayOutWorldEvent particles = new PacketPlayOutWorldEvent(2001, new net.minecraft.server.v1_12_R1.BlockPosition(block.getX(), block.getY(), block.getZ()), block.getType().getId(), false);
-            entity.playerConnection.sendPacket((Packet) particles);
+            wpsew.setLocation(new BlockPosition(block.getX(), block.getY(), block.getZ()));
+            wpsew.setData(block.getType().getId());
+            wpsew.sendPacket(player);
         }
     }
     

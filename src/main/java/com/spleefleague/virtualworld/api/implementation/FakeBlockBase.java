@@ -2,6 +2,7 @@ package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
+import java.util.Objects;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -117,10 +118,11 @@ public class FakeBlockBase implements FakeBlock {
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 37 * hash + this.x;
-        hash = 37 * hash + this.y;
-        hash = 37 * hash + this.z;
+        int hash = 7;
+        hash = 61 * hash + Objects.hashCode(this.chunk);
+        hash = 61 * hash + this.x;
+        hash = 61 * hash + this.y;
+        hash = 61 * hash + this.z;
         return hash;
     }
 
@@ -143,6 +145,9 @@ public class FakeBlockBase implements FakeBlock {
             return false;
         }
         if (this.z != other.z) {
+            return false;
+        }
+        if (!Objects.equals(this.chunk, other.chunk)) {
             return false;
         }
         return true;

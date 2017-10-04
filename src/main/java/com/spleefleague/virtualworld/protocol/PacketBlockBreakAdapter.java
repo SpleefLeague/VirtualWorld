@@ -44,7 +44,7 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         if(affected == null) {
             return;
         }
-        if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK || (p.isOnGround() && ppcbd.getStatus() == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
+        if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK || (ppcbd.getStatus() == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 FakeBlockBreakEvent breakEvent = new FakeBlockBreakEvent(affected, event.getPlayer());
                 Bukkit.getPluginManager().callEvent(breakEvent);
@@ -54,9 +54,9 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
                     }, 1);
                     return;
                 }
-                affected._setType(Material.AIR);
-                affected._setData((byte)0);
-                affected.registerChanged(ChangeType.BREAK);
+//                affected._setType(Material.AIR);
+//                affected._setData((byte)0);
+                affected.registerChanged(ChangeType.BREAK);//Type+Data set in FakeWorldManager
             });
         }
     }

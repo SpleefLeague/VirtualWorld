@@ -1,12 +1,10 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.Area;
-import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeChunk;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.bukkit.Chunk;
 import org.bukkit.util.Vector;
 
