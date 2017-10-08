@@ -16,11 +16,11 @@ import org.bukkit.Material;
  */
 public class ChunkSection {
     
-    private final BlockData[] blocks;
+    private final ChunkBlockData[] blocks;
     private final byte[] lightData;
     private boolean modified = false;
-    private BlockData[] paletteBlocks;
-    private final Set<BlockData> paletteBlockSet;
+    private ChunkBlockData[] paletteBlocks;
+    private final Set<ChunkBlockData> paletteBlockSet;
     
     /**
      * 
@@ -33,7 +33,7 @@ public class ChunkSection {
         paletteBlocks = palette.getBlocks();//Null for the global palette
         if(paletteBlocks != null) {
             paletteBlockSet = new HashSet<>();
-            for(BlockData data : paletteBlocks) {
+            for(ChunkBlockData data : paletteBlocks) {
                 paletteBlockSet.add(data);
             }
         }
@@ -44,22 +44,22 @@ public class ChunkSection {
     }
     
     protected ChunkSection(boolean overworld) {
-        BlockData air = new BlockData(Material.AIR, (byte)0);
-        blocks = new BlockData[4096];
+        ChunkBlockData air = new ChunkBlockData(Material.AIR, (byte)0);
+        blocks = new ChunkBlockData[4096];
         Arrays.fill(blocks, air);
         //An empty, unsent chunksection contains air blocks
-        paletteBlocks = new BlockData[]{air};
+        paletteBlocks = new ChunkBlockData[]{air};
         paletteBlockSet = new HashSet<>();
         paletteBlockSet.add(air);
         lightData = new byte[overworld ? 4096 : 2048];
         Arrays.fill(lightData, (byte)-1);//Default light data, everything is bright
     }
     
-    public BlockData getBlockRelative(int x, int y, int z) {
+    public ChunkBlockData getBlockRelative(int x, int y, int z) {
         return blocks[x + z * 16 + y * 256];
     }
     
-    public void setBlockRelative(BlockData data, int x, int y, int z) {
+    public void setBlockRelative(ChunkBlockData data, int x, int y, int z) {
         blocks[x + z * 16 + y * 256] = data;
         modified = true;
         if(paletteBlockSet != null) {
@@ -70,7 +70,7 @@ public class ChunkSection {
         }
     }
     
-    public BlockData[] getBlockData() {
+    public ChunkBlockData[] getBlockData() {
         return blocks;
     }
     
@@ -78,12 +78,12 @@ public class ChunkSection {
         return modified;
     }
     
-    public BlockData[] getContainedBlocks() {
+    public ChunkBlockData[] getContainedBlocks() {
         if(paletteBlocks == null) {
             if(paletteBlockSet == null) {
                 return null;
             }
-            paletteBlocks = paletteBlockSet.toArray(new BlockData[0]);
+            paletteBlocks = paletteBlockSet.toArray(new ChunkBlockData[0]);
         }
         return paletteBlocks;
     }

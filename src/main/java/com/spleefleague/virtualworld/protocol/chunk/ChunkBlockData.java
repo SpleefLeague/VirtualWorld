@@ -12,12 +12,12 @@ import org.bukkit.Material;
  *
  * @author Jonas
  */
-public class BlockData {
+public class ChunkBlockData {
     
     private final Material type;
     private final byte damage;
     
-    public BlockData(Material type, byte damage) {
+    public ChunkBlockData(Material type, byte damage) {
         this.type = type;
         this.damage = damage;
     }
@@ -33,8 +33,8 @@ public class BlockData {
     @Override
     public boolean equals(Object o) {
         if(o == null) return false;
-        if(!(o instanceof BlockData)) return false;
-        BlockData b = (BlockData) o;
+        if(!(o instanceof ChunkBlockData)) return false;
+        ChunkBlockData b = (ChunkBlockData) o;
         return b.type == type && b.damage == damage;
     }
 

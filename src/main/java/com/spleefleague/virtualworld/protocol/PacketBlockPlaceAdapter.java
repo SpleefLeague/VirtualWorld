@@ -1,6 +1,5 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayClientBlockPlace;
 import com.comphenix.packetwrapper.WrapperPlayClientUseItem;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -11,7 +10,8 @@ import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
-import com.spleefleague.virtualworld.api.implementation.BlockChange;
+import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
+import com.spleefleague.virtualworld.api.implementation.BlockData;
 import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.event.FakeBlockPlaceEvent;
 import org.bukkit.Bukkit;
@@ -77,9 +77,10 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
                     return;
                 }
                 FakeBlockBase eventBlock = (FakeBlockBase)placeEvent.getBlock();
+                BlockData oldState = eventBlock.getBlockdata().copy();
                 eventBlock._setType(handItem.getType());
                 eventBlock._setData(handItem.getData().getData());
-                eventBlock.registerChanged(BlockChange.ChangeType.PLACE);
+                eventBlock.registerChanged(ChangeType.PLACE, oldState, player);
                 if(player.getGameMode() != GameMode.CREATIVE) {
                     handItem.setAmount(handItem.getAmount() - 1);
                 }

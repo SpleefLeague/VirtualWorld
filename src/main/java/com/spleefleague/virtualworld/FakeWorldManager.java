@@ -11,6 +11,7 @@ import com.spleefleague.virtualworld.api.implementation.BlockChange;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
+import com.spleefleague.virtualworld.api.implementation.BlockData;
 import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.api.implementation.FakeChunkBase;
 import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
@@ -114,7 +115,7 @@ public class FakeWorldManager implements Listener {
                     .stream()
                     .filter(fb -> getBlockAt(player, fb.getLocation()).getWorld() == world)
                     .collect(Collectors.toSet());
-            sendDirect(player, newChanges);
+            sendDirectRaw(player, newChanges);
         }
     }
     
@@ -139,7 +140,7 @@ public class FakeWorldManager implements Listener {
                         return replacement;
                     })
                     .collect(Collectors.toSet());
-            sendDirect(player, newChanges);
+            sendDirectRaw(player, newChanges);
         }
     }
     
@@ -165,27 +166,11 @@ public class FakeWorldManager implements Listener {
         Bukkit.getScheduler().runTaskTimer(VirtualWorld.getInstance(), () -> {
             Map<FakeBlock, FakeBlockBase> breakData = new HashMap<>();
             for(Player player : observedWorlds.keySet()) {
-                Map<ChangeType, Set<FakeBlock>> changes = getChangesPerPlayer(player);
+                Map<ChangeType, Set<BlockChange>> changes = getChangesPerPlayer(player);
                 sendDirect(player, changes.get(ChangeType.PLUGIN));
                 sendPlace(player, changes.get(ChangeType.PLACE));
-                //Saving temporary block data to process block break effects
-                Set<FakeBlock> breakChanges = changes.get(ChangeType.BREAK);
-                if(breakChanges == null || breakChanges.isEmpty()) continue;
-                for(FakeBlock block : changes.get(ChangeType.BREAK)) {
-                    if(breakData.containsKey(block)) continue;
-                    FakeBlockBase base = new FakeBlockBase(null, block.getX(), block.getY(), block.getZ());
-                    base._setData(block.getData());
-                    base._setType(block.getType());
-                    breakData.put(block, base);
-                }
                 sendBreak(player, changes.get(ChangeType.BREAK));
-                sendBreakSounds(player, changes.get(ChangeType.BREAK)
-                        .stream()
-                        .map(breakData::get)
-                        .collect(Collectors.toSet())
-                );
             }
-            
             observedWorlds.values()
                     .stream()
                     .flatMap(m -> m.keySet().stream())
@@ -193,34 +178,42 @@ public class FakeWorldManager implements Listener {
         }, 0, 1);
     }
     
-    private void sendDirect(Player player, Collection<? extends FakeBlock> blocks) {
-        if(blocks == null || blocks.isEmpty()) return;
-        mbchandler.changeBlocks(blocks, player);
+    private void sendDirect(Player player, Collection<BlockChange> changes) {
+        if(changes == null || changes.isEmpty()) return;
+        sendDirectRaw(player, changes
+                .stream()
+                .map(bc -> bc.getBlock())
+                .collect(Collectors.toSet()));
     }
     
-    private void sendBreak(Player player, Collection<? extends FakeBlock> blocks) {
-        if(blocks == null || blocks.isEmpty()) return;
-        blocks.forEach(fb -> {
-            FakeBlockBase base = (FakeBlockBase)fb;
-            base._setData((byte)0);
-            base._setType(Material.AIR);
-        });
-        mbchandler.changeBlocks(blocks, player);
+    private void sendDirectRaw(Player player, Collection<? extends FakeBlock> changes) {
+        if(changes == null || changes.isEmpty()) return;
+        mbchandler.changeBlocks(changes, player);
     }
     
-    private void sendBreakSounds(Player player, Collection<? extends FakeBlock> blocks) {
-        if(blocks == null || blocks.isEmpty()) return;
+    private void sendBreak(Player player, Collection<BlockChange> changes) {
+        if(changes == null || changes.isEmpty()) return;
         WrapperPlayServerWorldEvent wpsew = new WrapperPlayServerWorldEvent();
         wpsew.setEffectId(2001);
-        for(FakeBlock block : blocks) {
+        for(BlockChange change : changes) {
+            FakeBlock block = change.getBlock();
+            BlockData prevState = change.getPreviousState();
             wpsew.setLocation(new BlockPosition(block.getX(), block.getY(), block.getZ()));
-            wpsew.setData(block.getType().getId());
+            wpsew.setData(prevState.getType().getId());
             wpsew.sendPacket(player);
         }
+        mbchandler.changeBlocks(changes
+                .stream()
+                .map(bc -> bc.getBlock())
+                .collect(Collectors.toSet()), player);
     }
     
-    private void sendPlace(Player player, Collection<? extends FakeBlock> blocks) {
-        if(blocks == null || blocks.isEmpty()) return;
+    private void sendPlace(Player player, Collection<BlockChange> changes) {
+        if(changes == null || changes.isEmpty()) return;
+        Collection<FakeBlock> blocks = changes
+                .stream()
+                .map(bc -> bc.getBlock())
+                .collect(Collectors.toSet());
         mbchandler.changeBlocks(blocks, player);
         net.minecraft.server.v1_12_R1.World world = ((CraftWorld)player.getWorld()).getHandle();
         EntityPlayer entity = ((CraftPlayer) player).getHandle();
@@ -230,19 +223,20 @@ public class FakeWorldManager implements Listener {
         }
     }   
     
-    private Map<ChangeType, Set<FakeBlock>> getChangesPerPlayer(Player player) {
+    private Map<ChangeType, Set<BlockChange>> getChangesPerPlayer(Player player) {
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
                 .filter(e -> !((FakeWorldBase)e.getKey()).getChanges().isEmpty())//Ignore empty worlds
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
                 .flatMap(e -> ((FakeWorldBase)e.getKey()).getChanges().stream())
+                .filter(bc -> bc.getCause() != player)
                 .filter(bc -> this.getBlockAt(player, bc.getBlock().getLocation()) == bc.getBlock())
                 .collect(Collectors.groupingBy(
                         BlockChange::getType,
                         HashMap::new,
                         Collectors.mapping(
-                                BlockChange::getBlock,
+                                Function.identity(),
                                 Collectors.toSet()
                         )
                 ));

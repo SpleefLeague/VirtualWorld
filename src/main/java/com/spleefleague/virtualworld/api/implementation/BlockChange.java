@@ -6,6 +6,7 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import java.util.Objects;
+import org.bukkit.entity.Player;
 
 /**
  *
@@ -15,10 +16,14 @@ public class BlockChange {
     
     private final FakeBlockBase block;
     private final ChangeType type;
+    private final BlockData previousState;
+    private final Player cause;
 
-    protected BlockChange(FakeBlockBase block, ChangeType type) {
+    public BlockChange(FakeBlockBase block, ChangeType type, BlockData previous, Player cause) {
         this.block = block;
         this.type = type;
+        this.cause = cause;
+        this.previousState = previous;
     }
 
     @Override
@@ -52,6 +57,14 @@ public class BlockChange {
 
     public ChangeType getType() {
         return type;
+    }
+
+    public BlockData getPreviousState() {
+        return previousState;
+    }
+
+    public Player getCause() {
+        return cause;
     }
     
     public static enum ChangeType {

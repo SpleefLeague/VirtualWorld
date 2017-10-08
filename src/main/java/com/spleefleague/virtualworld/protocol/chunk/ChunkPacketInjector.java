@@ -72,7 +72,7 @@ public class ChunkPacketInjector {
     }
 
     private static void writeChunkSectionData(ByteArrayOutputStream baos, ChunkSection section) throws IOException {
-        BlockData[] used = section.getContainedBlocks();
+        ChunkBlockData[] used = section.getContainedBlocks();
         BlockPalette palette;
         if (used == null) {
             palette = BlockPalette.GLOBAL;
@@ -104,7 +104,7 @@ public class ChunkPacketInjector {
             int id = e.getKey();
             ChunkSection section = sections[id];
             for (FakeBlock block : e.getValue()) {
-                BlockData data = new BlockData(block.getType(), block.getData());
+                ChunkBlockData data = new ChunkBlockData(block.getType(), block.getData());
                 int relX = block.getX() & 15; //Actual positive modulo, in java % means remainder. Only works as replacement for mod of powers of two
                 int relZ = block.getZ() & 15; //Can be replaced with ((block.getZ() % 16) + 16) % 16
                 section.setBlockRelative(data, relX, block.getY() % 16, relZ);

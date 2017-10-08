@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -20,7 +21,7 @@ public class FakeWorldBase implements FakeWorld {
     private final Map<Long, FakeChunkBase> chunks;
     private final World handle;
     private final Area area;
-    private final Collection<BlockChange> changes;
+    private final Set<BlockChange> changes;
     
     public FakeWorldBase(World world, Area area) {
         this.chunks = new HashMap<>();

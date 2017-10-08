@@ -11,6 +11,8 @@ import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
+import com.spleefleague.virtualworld.api.FakeBlock;
+import com.spleefleague.virtualworld.api.implementation.BlockData;
 import com.spleefleague.virtualworld.event.FakeBlockBreakEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -19,7 +21,9 @@ import org.bukkit.entity.Player;
 import net.minecraft.server.v1_12_R1.Block;
 import net.minecraft.server.v1_12_R1.EntityHuman;
 import net.minecraft.server.v1_12_R1.IBlockData;
+import net.minecraft.server.v1_12_R1.AxisAlignedBB;
 import org.bukkit.GameMode;
+import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
 
 /**
@@ -54,10 +58,14 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
                     }, 1);
                     return;
                 }
-//                affected._setType(Material.AIR);
-//                affected._setData((byte)0);
-                affected.registerChanged(ChangeType.BREAK);//Type+Data set in FakeWorldManager
+                BlockData oldState = affected.getBlockdata().copy();
+                affected._setType(Material.AIR);
+                affected._setData((byte)0);
+                affected.registerChanged(ChangeType.BREAK, oldState, p);
             });
+        }
+        else {
+            event.setCancelled(true);
         }
     }
     
@@ -82,6 +90,30 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         else {
             destructionValue = entityhuman.b(block.getBlockData()) / strength / 30.0F;
         }
-        return destructionValue >= 0.2F;
+        if(destructionValue < 0.2F || !isOnGroundFakeBlocks(player)) {
+            return false;
+        }
+        return true;
+    }
+    
+    private boolean isOnGroundFakeBlocks(Player player) {
+        if(player.isOnGround()) return true;
+        EntityHuman eh = ((CraftPlayer)player).getHandle();
+        AxisAlignedBB aabb = eh.getBoundingBox();
+        World world = player.getWorld();
+        FakeBlock fb;
+        int y = (int)(aabb.b - 0.01);
+        int minX = (int)aabb.a, maxX = (int)aabb.d;
+        int minZ = (int)aabb.c, maxZ = (int)aabb.f;
+        
+        fb = fakeWorldManager.getBlockAt(player, world, minX, y, minZ);
+        if(fb != null && fb.getType().isSolid()) return true;
+        fb = fakeWorldManager.getBlockAt(player, world, minX, y, maxZ);
+        if(fb != null && fb.getType().isSolid()) return true;
+        fb = fakeWorldManager.getBlockAt(player, world, maxX, y, minZ);
+        if(fb != null && fb.getType().isSolid()) return true;
+        fb = fakeWorldManager.getBlockAt(player, world, maxX, y, maxZ);
+        if(fb != null && fb.getType().isSolid()) return true;
+        return false;
     }
 }

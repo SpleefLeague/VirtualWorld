@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 
 /**
  *
@@ -15,8 +16,7 @@ public class FakeBlockBase implements FakeBlock {
     
     private final FakeChunkBase chunk;
     private final int x, y, z;
-    private Material type;
-    private byte data;
+    private final BlockData blockdata;
 
     public FakeBlockBase(FakeChunkBase chunk, int x, int y, int z) {
         this.chunk = chunk;
@@ -25,8 +25,10 @@ public class FakeBlockBase implements FakeBlock {
         this.z = z;
         if(chunk != null) {
             Block handle = getHandle();
-            this.type = handle.getType();
-            this.data = handle.getData();
+            blockdata = new BlockData(handle.getType(), handle.getData());
+        }
+        else {
+            blockdata = null;
         }
     }
     
@@ -60,14 +62,18 @@ public class FakeBlockBase implements FakeBlock {
         return z;
     }
 
+    public BlockData getBlockdata() {
+        return blockdata;
+    }
+
     @Override
     public Material getType() {
-        return type;
+        return blockdata.getType();
     }
 
     @Override
     public byte getData() {
-        return data;
+        return blockdata.getData();
     }
     
     @Override
@@ -78,12 +84,13 @@ public class FakeBlockBase implements FakeBlock {
     @Override
     public void setType(Material type, boolean force) {
         if(!force && getHandle().getType() != Material.AIR) return;
+        BlockData oldState = blockdata.copy();
         _setType(type);
-        registerChanged(ChangeType.PLUGIN);
+        registerChanged(ChangeType.PLUGIN, oldState, null);
     }
     
     public void _setType(Material type) {
-        this.type = type;
+        this.blockdata.setType(type);
     }
     
     @Override
@@ -94,17 +101,18 @@ public class FakeBlockBase implements FakeBlock {
     @Override
     public void setData(byte data, boolean force) {
         if(!force && getHandle().getType() != Material.AIR) return;
+        BlockData oldState = blockdata.copy();
         _setData(data);
-        registerChanged(ChangeType.PLUGIN);
+        registerChanged(ChangeType.PLUGIN, oldState, null);
     }
     
     public void _setData(byte data) {
-        this.data = data;
+        this.blockdata.setData(data);
     }
     
     public boolean hasNaturalState() {
         Block handle = getHandle();
-        return handle.getType() == type && handle.getData() == data;
+        return handle.getType() == blockdata.getType() && handle.getData() == blockdata.getData();
     }
     
     @Override
@@ -112,8 +120,8 @@ public class FakeBlockBase implements FakeBlock {
         return chunk.getHandle().getBlock(x, y, z);
     }
 
-    public void registerChanged(ChangeType changeType) {
-        this.chunk.notifyChange(new BlockChange(this, changeType));
+    public void registerChanged(ChangeType type, BlockData oldState, Player cause) {
+        this.chunk.notifyChange(new BlockChange(this, type, oldState, cause));
     }
 
     @Override
