@@ -133,7 +133,7 @@ public class FakeWorldManager implements Listener {
                         FakeBlock replacement = getBlockAt(player, fb.getLocation());
                         if(replacement == null) {
                             //Fake block only to be used to hold location + material.
-                            replacement = new FakeBlockBase((FakeChunkBase)world.getChunkAt(fb.getX() / 16, fb.getZ() / 16), fb.getX(), fb.getY(), fb.getZ());
+                            replacement = new FakeBlockBase((FakeChunkBase)world.getChunkAt(fb.getX() >> 4, fb.getZ() >> 4), fb.getX(), fb.getY(), fb.getZ());
                             ((FakeBlockBase)replacement)._setType(replacement.getHandle().getType());
                             ((FakeBlockBase)replacement)._setData(replacement.getHandle().getData());
                         }
@@ -196,6 +196,7 @@ public class FakeWorldManager implements Listener {
         WrapperPlayServerWorldEvent wpsew = new WrapperPlayServerWorldEvent();
         wpsew.setEffectId(2001);
         for(BlockChange change : changes) {
+            if(change.getCause() == player) continue;
             FakeBlock block = change.getBlock();
             BlockData prevState = change.getPreviousState();
             wpsew.setLocation(new BlockPosition(block.getX(), block.getY(), block.getZ()));
@@ -210,14 +211,15 @@ public class FakeWorldManager implements Listener {
     
     private void sendPlace(Player player, Collection<BlockChange> changes) {
         if(changes == null || changes.isEmpty()) return;
-        Collection<FakeBlock> blocks = changes
+        mbchandler.changeBlocks(changes
                 .stream()
                 .map(bc -> bc.getBlock())
-                .collect(Collectors.toSet());
-        mbchandler.changeBlocks(blocks, player);
+                .collect(Collectors.toSet()), player);
         net.minecraft.server.v1_12_R1.World world = ((CraftWorld)player.getWorld()).getHandle();
         EntityPlayer entity = ((CraftPlayer) player).getHandle();
-        for(FakeBlock block : blocks) {
+        for(BlockChange change : changes) {
+            if(change.getCause() == player) continue;
+            FakeBlock block = change.getBlock();
             SoundEffectType effectType = breakSounds.get(block.getType());
             world.a(entity, new net.minecraft.server.v1_12_R1.BlockPosition(block.getX(), block.getY(), block.getZ()), effectType.e(), SoundCategory.BLOCKS, (effectType.a() + 1.0F) / 2.0F, effectType.b() * 0.8F);
         }
@@ -230,7 +232,6 @@ public class FakeWorldManager implements Listener {
                 .filter(e -> !((FakeWorldBase)e.getKey()).getChanges().isEmpty())//Ignore empty worlds
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
                 .flatMap(e -> ((FakeWorldBase)e.getKey()).getChanges().stream())
-                .filter(bc -> bc.getCause() != player)
                 .filter(bc -> this.getBlockAt(player, bc.getBlock().getLocation()) == bc.getBlock())
                 .collect(Collectors.groupingBy(
                         BlockChange::getType,

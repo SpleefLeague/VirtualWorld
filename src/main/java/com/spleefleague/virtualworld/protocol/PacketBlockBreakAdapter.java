@@ -64,7 +64,7 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
                 affected.registerChanged(ChangeType.BREAK, oldState, p);
             });
         }
-        else {
+        else {    
             event.setCancelled(true);
         }
     }
@@ -103,9 +103,8 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         World world = player.getWorld();
         FakeBlock fb;
         int y = (int)(aabb.b - 0.01);
-        int minX = (int)aabb.a, maxX = (int)aabb.d;
-        int minZ = (int)aabb.c, maxZ = (int)aabb.f;
-        
+        int minX = (int)Math.floor(aabb.a), maxX = (int)Math.floor(aabb.d);
+        int minZ = (int)Math.floor(aabb.c), maxZ = (int)Math.floor(aabb.f);
         fb = fakeWorldManager.getBlockAt(player, world, minX, y, minZ);
         if(fb != null && fb.getType().isSolid()) return true;
         fb = fakeWorldManager.getBlockAt(player, world, minX, y, maxZ);
