@@ -14,14 +14,13 @@ import com.spleefleague.virtualworld.protocol.PacketBlockInteractAdapter;
 import com.spleefleague.virtualworld.protocol.PacketBlockPlaceAdapter;
 import com.spleefleague.virtualworld.protocol.PacketChunkLoadAdapter;
 import com.spleefleague.virtualworld.protocol.PacketChunkUnloadAdapter;
+import com.spleefleague.virtualworld.protocol.PacketOnGroundAdapter;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
 
 /**
  *
@@ -40,9 +39,12 @@ public class VirtualWorld extends JavaPlugin implements Listener {
         manager = ProtocolLibrary.getProtocolManager();
         MultiBlockChangeHandler mbchandler = MultiBlockChangeHandler.init();
         fakeWorldManager = FakeWorldManager.init(mbchandler);
+        PacketOnGroundAdapter groundStateManager = new PacketOnGroundAdapter();
+        Bukkit.getPluginManager().registerEvents(groundStateManager, this);
+        manager.addPacketListener(groundStateManager);
         manager.addPacketListener(new PacketChunkLoadAdapter(fakeWorldManager, mbchandler));
         manager.addPacketListener(new PacketChunkUnloadAdapter(mbchandler));
-        manager.addPacketListener(new PacketBlockBreakAdapter(fakeWorldManager));
+        manager.addPacketListener(new PacketBlockBreakAdapter(fakeWorldManager, groundStateManager));
         manager.addPacketListener(new PacketBlockInteractAdapter(fakeWorldManager));
         manager.addPacketListener(new PacketBlockPlaceAdapter(fakeWorldManager));
     }
