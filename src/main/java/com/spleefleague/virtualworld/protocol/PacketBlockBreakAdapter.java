@@ -40,6 +40,7 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
     
     @Override
     public void onPacketReceiving(PacketEvent event) {
+        if(event.isCancelled()) return;
         WrapperPlayClientBlockDig ppcbd = new WrapperPlayClientBlockDig(event.getPacket());
         BlockPosition loc = ppcbd.getLocation();
         Player p = event.getPlayer();

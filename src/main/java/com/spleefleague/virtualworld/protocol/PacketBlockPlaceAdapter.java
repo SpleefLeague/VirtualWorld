@@ -38,6 +38,7 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
 
     @Override
     public void onPacketReceiving(PacketEvent event) {
+        if(event.isCancelled()) return;
         Player player = event.getPlayer();
         WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event.getPacket());
         Vector direction = new Vector(0, 0, 0);

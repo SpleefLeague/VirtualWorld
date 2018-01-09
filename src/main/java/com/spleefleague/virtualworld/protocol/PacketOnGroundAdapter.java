@@ -5,6 +5,8 @@ import com.comphenix.packetwrapper.WrapperPlayClientKeepAlive;
 import com.comphenix.packetwrapper.WrapperPlayClientLook;
 import com.comphenix.packetwrapper.WrapperPlayClientPosition;
 import com.comphenix.packetwrapper.WrapperPlayClientPositionLook;
+import com.comphenix.packetwrapper.WrapperPlayClientTeleportAccept;
+import com.comphenix.packetwrapper.WrapperPlayServerPosition;
 import com.comphenix.protocol.PacketType;
 import static com.comphenix.protocol.PacketType.Play.Client.FLYING;
 import static com.comphenix.protocol.PacketType.Play.Client.LOOK;
@@ -41,6 +43,7 @@ public class PacketOnGroundAdapter extends PacketAdapter implements Listener {
     
     @Override
     public void onPacketReceiving(PacketEvent event) {
+        if(event.isCancelled()) return;
         PacketType type = event.getPacketType();
         boolean onGround = false;
         if(type == FLYING) {

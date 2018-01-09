@@ -1,6 +1,9 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.Area;
+import com.spleefleague.virtualworld.FakeWorldManager;
+import com.spleefleague.virtualworld.VirtualWorld;
+import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,8 +11,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 /**
@@ -22,12 +27,14 @@ public class FakeWorldBase implements FakeWorld {
     private final World handle;
     private final Area area;
     private final Set<BlockChange> changes;
+    private final FakeWorldManager fwm;
     
     public FakeWorldBase(World world, Area area) {
         this.chunks = new HashMap<>();
         this.changes = new HashSet<>();
         this.handle = world;
         this.area = area;
+        this.fwm = VirtualWorld.getInstance().getFakeWorldManager();
     }
     
     @Override
@@ -143,5 +150,23 @@ public class FakeWorldBase implements FakeWorld {
     @Override
     public Area getArea() {
         return area;
+    }
+
+    @Override
+    public void playEffect(Location location, Effect effect, int data) {
+//        FakeBlock block = this.getBlockAt(location);
+//        if(block == null) return;
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.playEffect(location, effect, data));
+    }
+
+    @Override
+    public <T> void playEffect(Location location, Effect effect, T data) {
+//        FakeBlock block = this.getBlockAt(location);
+//        if(block == null) return;
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.playEffect(location, effect, data));
     }
 }

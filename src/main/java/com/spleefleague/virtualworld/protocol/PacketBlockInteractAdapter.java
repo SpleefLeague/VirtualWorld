@@ -26,6 +26,7 @@ public class PacketBlockInteractAdapter extends PacketAdapter {
 
     @Override
     public void onPacketReceiving(PacketEvent event) {
+        if(event.isCancelled()) return;
         WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event.getPacket());
         if (wrapper.getLocation().getY() < 0) {
             return;

@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -56,6 +57,22 @@ public class FakeWorldManager implements Listener {
     private FakeWorldManager(MultiBlockChangeHandler mbchandler) {
         this.observedWorlds = new ConcurrentHashMap<>();
         this.mbchandler = mbchandler;
+    }
+    
+    public Set<Player> getPrimarySubscribers(FakeBlock block) {
+        return observedWorlds.entrySet()
+                    .stream()
+                    .filter(e -> this.getWorldAt(e.getKey(), block.getLocation()) == block.getWorld())
+                    .map(Entry::getKey)
+                    .collect(Collectors.toSet());
+    }
+    
+    public Set<Player> getSubscribers(FakeWorld world) {
+        return observedWorlds.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue().keySet().contains(world))
+                    .map(Entry::getKey)
+                    .collect(Collectors.toSet());
     }
     
     public Collection<FakeBlock> getBlocksInChunk(Player player, int x, int z) {

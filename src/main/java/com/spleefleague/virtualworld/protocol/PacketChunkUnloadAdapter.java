@@ -28,6 +28,7 @@ public class PacketChunkUnloadAdapter extends PacketAdapter {
 
     @Override
     public void onPacketSending(PacketEvent event) {
+        if(event.isCancelled()) return;
         WrapperPlayServerUnloadChunk wpsuc = new WrapperPlayServerUnloadChunk(event.getPacket());
         Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
             Chunk chunk = event.getPlayer().getWorld().getChunkAt(wpsuc.getChunkX(), wpsuc.getChunkZ());

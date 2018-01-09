@@ -7,7 +7,6 @@ package com.spleefleague.virtualworld;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
-import com.spleefleague.virtualworld.api.FakeWorld;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import com.spleefleague.virtualworld.protocol.PacketBlockBreakAdapter;
 import com.spleefleague.virtualworld.protocol.PacketBlockInteractAdapter;
@@ -16,22 +15,17 @@ import com.spleefleague.virtualworld.protocol.PacketChunkLoadAdapter;
 import com.spleefleague.virtualworld.protocol.PacketChunkUnloadAdapter;
 import com.spleefleague.virtualworld.protocol.PacketOnGroundAdapter;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  *
  * @author jonas
  */
-public class VirtualWorld extends JavaPlugin implements Listener {
+public class VirtualWorld extends JavaPlugin {
 
     private static VirtualWorld instance;
     private ProtocolManager manager;
     private FakeWorldManager fakeWorldManager;
-    private FakeWorld test, test2;
     
     @Override
     public void onEnable() {
@@ -60,26 +54,4 @@ public class VirtualWorld extends JavaPlugin implements Listener {
     public static VirtualWorld getInstance() {
         return instance;
     }
-    
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        FakeWorld fst = test, snd = test2;
-        test = test2;
-        test2 = fst;
-        fakeWorldManager.addWorld(player, fst, 1);
-        Bukkit.getScheduler().runTaskLater(this, () -> {
-            fakeWorldManager.addWorld(player, snd, 0);
-        }, 10 * 20);
-    }
-    
-//    @EventHandler
-//    public void onFakeBreak(FakeBlockBreakEvent event) {
-//        event.setCancelled(event.getPlayer().getName().equals("Geier"));
-//    }
-//    
-//    @EventHandler
-//    public void onFakePlace(FakeBlockPlaceEvent event) {
-//        event.setCancelled(event.getPlayer().getName().equals("Geier"));
-//    }
 }

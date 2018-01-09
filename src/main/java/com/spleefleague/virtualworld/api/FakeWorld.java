@@ -7,6 +7,7 @@ package com.spleefleague.virtualworld.api;
 
 import com.spleefleague.virtualworld.Area;
 import java.util.Collection;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
@@ -24,4 +25,7 @@ public interface FakeWorld {
     Collection<? extends FakeBlock> getUsedBlocks(); 
     World getHandle();
     Area getArea();
+    
+    void playEffect(Location lctn, Effect effect, int i);
+    <T extends Object> void playEffect(Location lctn, Effect effect, T t);
 }
