@@ -15,6 +15,7 @@ import com.spleefleague.virtualworld.protocol.PacketChunkLoadAdapter;
 import com.spleefleague.virtualworld.protocol.PacketChunkUnloadAdapter;
 import com.spleefleague.virtualworld.protocol.PacketOnGroundAdapter;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -26,6 +27,7 @@ public class VirtualWorld extends JavaPlugin {
     private static VirtualWorld instance;
     private ProtocolManager manager;
     private FakeWorldManager fakeWorldManager;
+    private PacketOnGroundAdapter groundStateManager;
     
     @Override
     public void onEnable() {
@@ -33,7 +35,7 @@ public class VirtualWorld extends JavaPlugin {
         manager = ProtocolLibrary.getProtocolManager();
         MultiBlockChangeHandler mbchandler = MultiBlockChangeHandler.init();
         fakeWorldManager = FakeWorldManager.init(mbchandler);
-        PacketOnGroundAdapter groundStateManager = new PacketOnGroundAdapter();
+        groundStateManager = new PacketOnGroundAdapter();
         Bukkit.getPluginManager().registerEvents(groundStateManager, this);
         manager.addPacketListener(groundStateManager);
         manager.addPacketListener(new PacketChunkLoadAdapter(fakeWorldManager, mbchandler));
@@ -49,6 +51,10 @@ public class VirtualWorld extends JavaPlugin {
     
     public FakeWorldManager getFakeWorldManager() {
         return fakeWorldManager;
+    }
+    
+    public boolean isOnGround(Player p) {
+        return groundStateManager.isOnGround(p);
     }
     
     public static VirtualWorld getInstance() {

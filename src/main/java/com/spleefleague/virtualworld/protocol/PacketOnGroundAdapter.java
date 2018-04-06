@@ -1,12 +1,9 @@
 package com.spleefleague.virtualworld.protocol;
 
 import com.comphenix.packetwrapper.WrapperPlayClientFlying;
-import com.comphenix.packetwrapper.WrapperPlayClientKeepAlive;
 import com.comphenix.packetwrapper.WrapperPlayClientLook;
 import com.comphenix.packetwrapper.WrapperPlayClientPosition;
 import com.comphenix.packetwrapper.WrapperPlayClientPositionLook;
-import com.comphenix.packetwrapper.WrapperPlayClientTeleportAccept;
-import com.comphenix.packetwrapper.WrapperPlayServerPosition;
 import com.comphenix.protocol.PacketType;
 import static com.comphenix.protocol.PacketType.Play.Client.FLYING;
 import static com.comphenix.protocol.PacketType.Play.Client.LOOK;
@@ -18,6 +15,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.spleefleague.virtualworld.VirtualWorld;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,14 +29,14 @@ import org.bukkit.event.player.PlayerQuitEvent;
  */
 public class PacketOnGroundAdapter extends PacketAdapter implements Listener {
 
-    private final Map<Player, Boolean> onGround = new HashMap<>();
+    private final Map<UUID, Boolean> onGround = new HashMap<>();
     
     public PacketOnGroundAdapter() {
         super(VirtualWorld.getInstance(), ListenerPriority.NORMAL, new PacketType[]{FLYING, POSITION, POSITION_LOOK, LOOK});
     }
     
     public boolean isOnGround(Player player) {
-        return player.isOnGround() || onGround.get(player);
+        return player.isOnGround() || onGround.get(player.getUniqueId());
     }
     
     @Override
@@ -58,7 +56,7 @@ public class PacketOnGroundAdapter extends PacketAdapter implements Listener {
         else if(type == LOOK) {
             onGround = new WrapperPlayClientLook(event.getPacket()).getOnGround();
         }
-        this.onGround.put(event.getPlayer(), onGround);
+        this.onGround.put(event.getPlayer().getUniqueId(), onGround);
     }
     
     @Override
@@ -68,11 +66,11 @@ public class PacketOnGroundAdapter extends PacketAdapter implements Listener {
     
     @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
-        this.onGround.put(event.getPlayer(), Boolean.FALSE);
+        this.onGround.put(event.getPlayer().getUniqueId(), Boolean.FALSE);
     }
     
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
-        this.onGround.remove(event.getPlayer());
+        this.onGround.remove(event.getPlayer().getUniqueId());
     }
 }

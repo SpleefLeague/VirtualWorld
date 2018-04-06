@@ -9,6 +9,8 @@ import com.spleefleague.virtualworld.Area;
 import java.util.Collection;
 import org.bukkit.Effect;
 import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
@@ -28,4 +30,13 @@ public interface FakeWorld {
     
     void playEffect(Location lctn, Effect effect, int i);
     <T extends Object> void playEffect(Location lctn, Effect effect, T t);
+    
+    void spawnParticle(Particle particle, Location location, int count);
+    <T> void spawnParticle(Particle particle, Location location, int count, T data);
+    void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset);
+    <T> void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset, T data);
+    void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset, double extra);
+    <T> void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset, double extra, T data);
+    
+    <T> void playSound(Location location, Sound sound, float volume, float pitch);
 }

@@ -3,7 +3,6 @@ package com.spleefleague.virtualworld.api.implementation;
 import com.spleefleague.virtualworld.Area;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
-import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,6 +12,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.bukkit.Effect;
 import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -153,9 +154,56 @@ public class FakeWorldBase implements FakeWorld {
     }
 
     @Override
+    public void spawnParticle(Particle particle, Location location, int count) {
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.spawnParticle(particle, location, count));
+    }
+    
+    @Override
+    public <T> void spawnParticle(Particle particle, Location location, int count, T data) {
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.spawnParticle(particle, location, count, data));
+    }
+
+    @Override
+    public void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset) {
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.spawnParticle(particle, location, count, xOffset, yOffset, zOffset));
+    }
+    
+    @Override
+    public <T> void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset, T data) {
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.spawnParticle(particle, location, count, xOffset, yOffset, zOffset, data));
+    }
+
+    @Override
+    public void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset, double extra) {
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.spawnParticle(particle, location, count, xOffset, yOffset, zOffset, extra));
+    }
+    
+    @Override
+    public <T> void spawnParticle(Particle particle, Location location, int count, double xOffset, double yOffset, double zOffset, double extra, T data) {
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.spawnParticle(particle, location, count, xOffset, yOffset, zOffset, extra, data));
+    }
+    
+    @Override
+    public <T> void playSound(Location location, Sound sound, float volume, float pitch) {
+        Set<Player> targets = fwm.getSubscribers(this);
+        if(targets.isEmpty()) return;
+        targets.forEach(p -> p.playSound(location, sound, volume, pitch));
+    }
+    
+    @Override
     public void playEffect(Location location, Effect effect, int data) {
-//        FakeBlock block = this.getBlockAt(location);
-//        if(block == null) return;
         Set<Player> targets = fwm.getSubscribers(this);
         if(targets.isEmpty()) return;
         targets.forEach(p -> p.playEffect(location, effect, data));
@@ -163,8 +211,6 @@ public class FakeWorldBase implements FakeWorld {
 
     @Override
     public <T> void playEffect(Location location, Effect effect, T data) {
-//        FakeBlock block = this.getBlockAt(location);
-//        if(block == null) return;
         Set<Player> targets = fwm.getSubscribers(this);
         if(targets.isEmpty()) return;
         targets.forEach(p -> p.playEffect(location, effect, data));
