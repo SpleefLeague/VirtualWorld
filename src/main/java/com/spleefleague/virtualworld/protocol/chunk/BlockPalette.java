@@ -6,7 +6,14 @@
 package com.spleefleague.virtualworld.protocol.chunk;
 
 import java.util.HashMap;
-import org.bukkit.Material;
+import java.util.Map;
+import net.minecraft.server.v1_13_R1.Block;
+import net.minecraft.server.v1_13_R1.IBlockData;
+import net.minecraft.server.v1_13_R1.MinecraftKey;
+import net.minecraft.server.v1_13_R1.RegistryBlockID;
+import net.minecraft.server.v1_13_R1.RegistryBlocks;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_13_R1.block.data.CraftBlockData;
 
 /**
  *
@@ -15,21 +22,33 @@ import org.bukkit.Material;
 public abstract class BlockPalette {
     
     public static final BlockPalette GLOBAL = GlobalBlockPalette.instance();
+    private static final RegistryBlockID<IBlockData> REGISTRY_ID = Block.REGISTRY_ID;
+    private static final RegistryBlocks<MinecraftKey, Block> REGISTRY = Block.REGISTRY;
     
-    public abstract ChunkBlockData[] decode(byte[] data);
-    public abstract ChunkBlockData[] getBlocks();
+    public abstract BlockData[] decode(byte[] data);
+    public abstract BlockData[] getBlocks();
     public abstract int getBitsPerBlock();
     public abstract int getLength();
     public abstract int[] getPaletteData();
-    public abstract byte[] encode(ChunkBlockData[] data);
+    public abstract byte[] encode(BlockData[] data);
+    public abstract boolean includePaletteLength();
+    
+    private static int blockDataToId(BlockData data) {
+        return REGISTRY_ID.getId(((CraftBlockData)data).getState());
+    }
+    
+    private static BlockData blockDataFromId(int id) {
+        IBlockData ibd = REGISTRY_ID.fromId(id);
+        return CraftBlockData.fromData(ibd);
+    }
     
     public static BlockPalette createPalette(int[] data, int bitsPerBlock) {
         return new EncodedBlockPalette(data, bitsPerBlock);
     }
     
-    public static BlockPalette createPalette(ChunkBlockData[] data) {
+    public static BlockPalette createPalette(BlockData[] data) {
         int bitsPerBlock = Math.max(32 - Integer.numberOfLeadingZeros(data.length - 1), 4);
-        if(bitsPerBlock < 9) {
+        if(bitsPerBlock < 10) {
             return new EncodedBlockPalette(data, bitsPerBlock);
         }
         else {
@@ -40,13 +59,12 @@ public abstract class BlockPalette {
     private static class GlobalBlockPalette extends BlockPalette {
 
         @Override
-        public ChunkBlockData[] decode(byte[] data) {
+        public BlockData[] decode(byte[] data) {
             ProtocolLongArrayBitReader reader = new ProtocolLongArrayBitReader(data);
-            ChunkBlockData[] bdata = new ChunkBlockData[4096];//Chunk section is 16x16x16
+            BlockData[] bdata = new BlockData[4096];//Chunk section is 16x16x16
             for (int i = 0; i < bdata.length; i++) {
-                byte damage = reader.readByte(4);
-                int id = reader.readInt(9);
-                bdata[i] = new ChunkBlockData(Material.getMaterial(id), damage);
+                int id = reader.readInt(14);
+                bdata[i] = blockDataFromId(id);
             }
             return bdata;
         }
@@ -56,22 +74,26 @@ public abstract class BlockPalette {
         }
         
         @Override
-        public ChunkBlockData[] getBlocks() {
+        public BlockData[] getBlocks() {
             return null;
         }
 
         @Override
         public int getBitsPerBlock() {
-            return 13;
+            return 14;
+        }
+        
+        @Override
+        public boolean includePaletteLength() {
+            return false;
         }
 
         @Override
-        public byte[] encode(ChunkBlockData[] data) {
+        public byte[] encode(BlockData[] data) {
             byte[] array = new byte[6656];
             ProtocolLongArrayBitWriter writer = new ProtocolLongArrayBitWriter(array);
-            for(ChunkBlockData block : data) {
-                writer.writeByte(block.getDamage(), 4);
-                writer.writeInt(block.getType().getId(), 9);
+            for(BlockData block : data) {
+                writer.writeInt(blockDataToId(block), 14);
             }
             return array;
         }
@@ -89,7 +111,7 @@ public abstract class BlockPalette {
     
     private static class EncodedBlockPalette extends BlockPalette {
         
-        private final ChunkBlockData[] lookupTable;
+        private final BlockData[] lookupTable;
         private final int bitsPerBlock;
         
         public EncodedBlockPalette(int[] data, int bitsPerBlock) {
@@ -97,25 +119,23 @@ public abstract class BlockPalette {
             this.lookupTable = createLookupTable(data);
         }
         
-        public EncodedBlockPalette(ChunkBlockData[] lookupTable, int bitsPerBlock) {
+        public EncodedBlockPalette(BlockData[] lookupTable, int bitsPerBlock) {
             this.lookupTable = lookupTable;
             this.bitsPerBlock = bitsPerBlock;
         }
         
-        private ChunkBlockData[] createLookupTable(int[] data) {
-            ChunkBlockData[] lookupTable = new ChunkBlockData[data.length];
+        private BlockData[] createLookupTable(int[] data) {
+            BlockData[] lookupTable = new BlockData[data.length];
             for(int i = 0; i < data.length; i++) {
-                byte damage = (byte) (data[i] & 0xF);
-                int id = data[i] >> 4;
-                lookupTable[i] = new ChunkBlockData(Material.getMaterial(id), damage);
+                lookupTable[i] = blockDataFromId(data[i]);
             }
             return lookupTable;
         }
         
         @Override
-        public ChunkBlockData[] decode(byte[] data) {
+        public BlockData[] decode(byte[] data) {
             ProtocolLongArrayBitReader reader = new ProtocolLongArrayBitReader(data);
-            ChunkBlockData[] array = new ChunkBlockData[4096];
+            BlockData[] array = new BlockData[4096];
             for(int i = 0; i < array.length; i++) {
                 array[i] = lookupTable[reader.readShort(bitsPerBlock)];
             }
@@ -123,7 +143,7 @@ public abstract class BlockPalette {
         }
 
         @Override
-        public ChunkBlockData[] getBlocks() {
+        public BlockData[] getBlocks() {
             return lookupTable;
         }
 
@@ -131,20 +151,25 @@ public abstract class BlockPalette {
         public int getBitsPerBlock() {
             return bitsPerBlock;
         }
+        
+        @Override
+        public boolean includePaletteLength() {
+            return true;
+        }
 
         @Override
-        public byte[] encode(ChunkBlockData[] data) {
+        public byte[] encode(BlockData[] data) {
             byte[] array = new byte[512 * bitsPerBlock];
             ProtocolLongArrayBitWriter writer = new ProtocolLongArrayBitWriter(array);
-            HashMap<ChunkBlockData, Integer> lookup = new HashMap<>();
+            Map<BlockData, Integer> lookup = new HashMap<>();
             for(int i = 0; i < lookupTable.length; i++) {
                 lookup.put(lookupTable[i], i);
             }
-            for(ChunkBlockData block : data) {
+            for(BlockData block : data) {
                 try {
                     writer.writeInt(lookup.get(block), bitsPerBlock);
                 } catch(NullPointerException e) {
-                    System.out.println("Error encoding data: " + block.getType());
+                    System.out.println("Error encoding data: " + block.getAsString());
                     throw e;
                 }
             }
@@ -155,8 +180,7 @@ public abstract class BlockPalette {
         public int[] getPaletteData() {
             int[] data = new int[lookupTable.length];
             for(int i = 0; i < data.length; i++) {
-                data[i] = lookupTable[i].getDamage() & 0xF;
-                data[i] |= lookupTable[i].getType().getId() << 4;
+                data[i] = blockDataToId(lookupTable[i]);
             }
             return data;
         }
@@ -166,4 +190,4 @@ public abstract class BlockPalette {
             return lookupTable.length;
         }
     }
-}
+} 

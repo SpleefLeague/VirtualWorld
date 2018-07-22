@@ -10,17 +10,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_12_R1.CraftChunk;
+import org.bukkit.craftbukkit.v1_13_R1.CraftChunk;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -51,7 +49,7 @@ public class MultiBlockChangeHandler implements Listener {
     private void sendMultiBlockChange(MultiBlockChangeData mbcd, Collection<Player> affected) {
         if (!affected.isEmpty()) {
             World world = affected.stream().findAny().get().getWorld();
-            net.minecraft.server.v1_12_R1.Chunk chunk = ((CraftChunk) world.getChunkAt(mbcd.getChunkX(), mbcd.getChunkZ())).getHandle();
+            net.minecraft.server.v1_13_R1.Chunk chunk = ((CraftChunk) world.getChunkAt(mbcd.getChunkX(), mbcd.getChunkZ())).getHandle();
             WrapperPlayServerMultiBlockChange wrapper = new WrapperPlayServerMultiBlockChange();
             wrapper.setChunk(new ChunkCoordIntPair(chunk.locX, chunk.locZ));
             wrapper.setRecords(mbcd.getData());

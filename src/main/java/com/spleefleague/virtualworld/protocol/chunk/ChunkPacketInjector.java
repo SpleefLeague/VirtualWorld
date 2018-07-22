@@ -3,7 +3,6 @@ package com.spleefleague.virtualworld.protocol.chunk;
 import com.comphenix.packetwrapper.WrapperPlayServerMapChunk;
 import com.comphenix.protocol.events.PacketContainer;
 import com.spleefleague.virtualworld.api.FakeBlock;
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -15,9 +14,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minecraft.server.v1_12_R1.PacketPlayOutMapChunk;
+import net.minecraft.server.v1_13_R1.PacketPlayOutMapChunk;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
+import org.bukkit.block.data.BlockData;
 
 /**
  *
@@ -72,7 +72,7 @@ public class ChunkPacketInjector {
     }
 
     private static void writeChunkSectionData(ByteArrayOutputStream baos, ChunkSection section) throws IOException {
-        ChunkBlockData[] used = section.getContainedBlocks();
+        BlockData[] used = section.getContainedBlocks();
         BlockPalette palette;
         if (used == null) {
             palette = BlockPalette.GLOBAL;
@@ -90,7 +90,9 @@ public class ChunkPacketInjector {
         byte[] blockdata = palette.encode(section.getBlockData());
         byte[] lightingData = section.getLightingData();
         baos.write(bpb);
-        ByteBufferReader.writeVarIntToByteArrayOutputStream(paletteLength, baos);
+        if(palette.includePaletteLength()) {
+            ByteBufferReader.writeVarIntToByteArrayOutputStream(paletteLength, baos);
+        }
         for (int p : paletteInfo) {
             ByteBufferReader.writeVarIntToByteArrayOutputStream(p, baos);
         }
@@ -104,10 +106,9 @@ public class ChunkPacketInjector {
             int id = e.getKey();
             ChunkSection section = sections[id];
             for (FakeBlock block : e.getValue()) {
-                ChunkBlockData data = new ChunkBlockData(block.getType(), block.getData());
                 int relX = block.getX() & 15; //Actual positive modulo, in java % means remainder. Only works as replacement for mod of powers of two
                 int relZ = block.getZ() & 15; //Can be replaced with ((block.getZ() % 16) + 16) % 16
-                section.setBlockRelative(data, relX, block.getY() % 16, relZ);
+                section.setBlockRelative(block.getBlockData(), relX, block.getY() % 16, relZ);
             }
         }
     }
@@ -121,9 +122,12 @@ public class ChunkPacketInjector {
             if ((bitmask & 0x8000 >> (15 - i)) != 0) {
                 if ((originalMask & 0x8000 >> (15 - i)) != 0) {
                     short bpb = (short) Byte.toUnsignedInt(buffer.get());
-                    int paletteLength = bbr.readVarInt();
+                    int paletteLength = 0;
+                    if(bpb < 10) {
+                        paletteLength = bbr.readVarInt();
+                    }
                     BlockPalette palette;
-                    if (paletteLength != 0 || bpb < 9) {
+                    if (paletteLength != 0) {
                         int[] paletteData = new int[paletteLength];
                         for (int j = 0; j < paletteLength; j++) {
                             paletteData[j] = bbr.readVarInt();

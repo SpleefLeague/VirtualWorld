@@ -11,17 +11,17 @@ import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
-import com.spleefleague.virtualworld.api.implementation.BlockData;
 import com.spleefleague.virtualworld.event.FakeBlockBreakEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import net.minecraft.server.v1_12_R1.Block;
-import net.minecraft.server.v1_12_R1.EntityHuman;
-import net.minecraft.server.v1_12_R1.IBlockData;
+import net.minecraft.server.v1_13_R1.Block;
+import net.minecraft.server.v1_13_R1.EntityHuman;
+import net.minecraft.server.v1_13_R1.IBlockData;
 import org.bukkit.GameMode;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_13_R1.entity.CraftPlayer;
 
 /**
  *
@@ -54,13 +54,12 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
                 Bukkit.getPluginManager().callEvent(breakEvent);
                 if(breakEvent.isCancelled()) {
                     Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                        p.sendBlockChange(new Location(p.getWorld(), loc.getX(), loc.getY(), loc.getZ()), affected.getType(), affected.getData());
+                        p.sendBlockChange(new Location(p.getWorld(), loc.getX(), loc.getY(), loc.getZ()), affected.getBlockData());
                     }, 1);
                     return;
                 }
-                BlockData oldState = affected.getBlockdata().copy();
+                BlockData oldState = affected.getBlockdata().clone();
                 affected._setType(Material.AIR);
-                affected._setData((byte)0);
                 affected.registerChanged(ChangeType.BREAK, oldState, p);
             });
         }

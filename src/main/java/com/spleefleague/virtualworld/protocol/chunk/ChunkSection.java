@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 
 /**
  *
@@ -16,15 +17,14 @@ import org.bukkit.Material;
  */
 public class ChunkSection {
     
-    private final ChunkBlockData[] blocks;
+    private final BlockData[] blocks;
     private final byte[] lightData;
     private boolean modified = false;
-    private ChunkBlockData[] paletteBlocks;
-    private final Set<ChunkBlockData> paletteBlockSet;
+    private BlockData[] paletteBlocks;//Cached palette blocks array
+    private final Set<BlockData> paletteBlockSet;
     
     /**
-     * 
-     * @param blockdata Block data array described as in http://wiki.vg/SMP_Map_Format
+     * @param blockdata Block data array described as in http://wiki.vg/Chunk_Format
      * @param lightData The chunk's original lighting data
      * @param palette Block palette object
      */
@@ -33,7 +33,7 @@ public class ChunkSection {
         paletteBlocks = palette.getBlocks();//Null for the global palette
         if(paletteBlocks != null) {
             paletteBlockSet = new HashSet<>();
-            for(ChunkBlockData data : paletteBlocks) {
+            for(BlockData data : paletteBlocks) {
                 paletteBlockSet.add(data);
             }
         }
@@ -44,33 +44,32 @@ public class ChunkSection {
     }
     
     protected ChunkSection(boolean overworld) {
-        ChunkBlockData air = new ChunkBlockData(Material.AIR, (byte)0);
-        blocks = new ChunkBlockData[4096];
+        BlockData air = Material.AIR.createBlockData();
+        blocks = new BlockData[4096];
         Arrays.fill(blocks, air);
         //An empty, unsent chunksection contains air blocks
-        paletteBlocks = new ChunkBlockData[]{air};
+        paletteBlocks = new BlockData[]{air};
         paletteBlockSet = new HashSet<>();
         paletteBlockSet.add(air);
         lightData = new byte[overworld ? 4096 : 2048];
         Arrays.fill(lightData, (byte)-1);//Default light data, everything is bright
     }
     
-    public ChunkBlockData getBlockRelative(int x, int y, int z) {
+    public BlockData getBlockRelative(int x, int y, int z) {
         return blocks[x + z * 16 + y * 256];
     }
     
-    public void setBlockRelative(ChunkBlockData data, int x, int y, int z) {
+    public void setBlockRelative(BlockData data, int x, int y, int z) {
         blocks[x + z * 16 + y * 256] = data;
         modified = true;
         if(paletteBlockSet != null) {
-            if(!paletteBlockSet.contains(data)) {
-                paletteBlocks = null;
+            if(!paletteBlockSet.add(data)) {
+                paletteBlocks = null;//Invalidate if new element was inserted
             }
-            paletteBlockSet.add(data);
         }
     }
     
-    public ChunkBlockData[] getBlockData() {
+    public BlockData[] getBlockData() {
         return blocks;
     }
     
@@ -78,12 +77,12 @@ public class ChunkSection {
         return modified;
     }
     
-    public ChunkBlockData[] getContainedBlocks() {
+    public BlockData[] getContainedBlocks() {
         if(paletteBlocks == null) {
             if(paletteBlockSet == null) {
                 return null;
             }
-            paletteBlocks = paletteBlockSet.toArray(new ChunkBlockData[0]);
+            paletteBlocks = paletteBlockSet.toArray(new BlockData[0]);
         }
         return paletteBlocks;
     }

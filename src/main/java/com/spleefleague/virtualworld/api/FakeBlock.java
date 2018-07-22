@@ -8,6 +8,7 @@ package com.spleefleague.virtualworld.api;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 
 /**
  *
@@ -16,11 +17,15 @@ import org.bukkit.block.Block;
 public interface FakeBlock {
     
     Material getType();
-    void setType(Material type);
-    void setType(Material type, boolean force);
-    byte getData();
-    void setData(byte data);
-    void setData(byte data, boolean force);
+    default void setType(Material type) {
+        setBlockData(type.createBlockData());
+    }
+    default void setType(Material type, boolean force) {
+        setBlockData(type.createBlockData(), force);
+    }
+    void setBlockData(BlockData data);
+    void setBlockData(BlockData data, boolean force);
+    BlockData getBlockData();
     FakeWorld getWorld();
     FakeChunk getChunk();
     int getX();

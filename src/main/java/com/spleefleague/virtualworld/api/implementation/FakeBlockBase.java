@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 /**
@@ -16,7 +17,7 @@ public class FakeBlockBase implements FakeBlock {
     
     private final FakeChunkBase chunk;
     private final int x, y, z;
-    private final BlockData blockdata;
+    private BlockData blockData;
 
     public FakeBlockBase(FakeChunkBase chunk, int x, int y, int z) {
         this.chunk = chunk;
@@ -25,10 +26,10 @@ public class FakeBlockBase implements FakeBlock {
         this.z = z;
         if(chunk != null) {
             Block handle = getHandle();
-            blockdata = new BlockData(handle.getType(), handle.getData());
+            blockData = handle.getBlockData();
         }
         else {
-            blockdata = null;
+            blockData = null;
         }
     }
     
@@ -63,17 +64,17 @@ public class FakeBlockBase implements FakeBlock {
     }
 
     public BlockData getBlockdata() {
-        return blockdata;
+        return blockData;
     }
 
     @Override
     public Material getType() {
-        return blockdata.getType();
+        return blockData.getMaterial();
     }
 
     @Override
-    public byte getData() {
-        return blockdata.getData();
+    public BlockData getBlockData() {
+        return blockData;
     }
     
     @Override
@@ -82,37 +83,29 @@ public class FakeBlockBase implements FakeBlock {
     }
 
     @Override
-    public void setType(Material type, boolean force) {
+    public void setBlockData(BlockData data) {
+        setBlockData(data, false);
+    }
+    
+    @Override
+    public void setBlockData(BlockData blockData, boolean force) {
         if(!force && getHandle().getType() != Material.AIR) return;
-        BlockData oldState = blockdata.copy();
-        _setType(type);
+        BlockData oldState = blockData.clone();
+        _setBlockData(blockData);
         registerChanged(ChangeType.PLUGIN, oldState, null);
     }
     
     public void _setType(Material type) {
-        this.blockdata.setType(type);
+        _setBlockData(type.createBlockData());
     }
     
-    @Override
-    public void setData(byte data) {
-        setData(data, false);
-    }
-    
-    @Override
-    public void setData(byte data, boolean force) {
-        if(!force && getHandle().getType() != Material.AIR) return;
-        BlockData oldState = blockdata.copy();
-        _setData(data);
-        registerChanged(ChangeType.PLUGIN, oldState, null);
-    }
-    
-    public void _setData(byte data) {
-        this.blockdata.setData(data);
+    public void _setBlockData(BlockData blockData) {
+        this.blockData = blockData;
     }
     
     public boolean hasNaturalState() {
         Block handle = getHandle();
-        return handle.getType() == blockdata.getType() && handle.getData() == blockdata.getData();
+        return handle.getBlockData().equals(blockData);
     }
     
     @Override

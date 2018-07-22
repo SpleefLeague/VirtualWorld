@@ -11,7 +11,6 @@ import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeWorld;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
-import com.spleefleague.virtualworld.api.implementation.BlockData;
 import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.event.FakeBlockPlaceEvent;
 import org.bukkit.Bukkit;
@@ -19,6 +18,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -78,9 +78,9 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
                     return;
                 }
                 FakeBlockBase eventBlock = (FakeBlockBase)placeEvent.getBlock();
-                BlockData oldState = eventBlock.getBlockdata().copy();
+                BlockData oldState = eventBlock.getBlockdata().clone();
                 eventBlock._setType(handItem.getType());
-                eventBlock._setData(handItem.getData().getData());
+                //TODO parse MaterialData properly
                 eventBlock.registerChanged(ChangeType.PLACE, oldState, player);
                 if(player.getGameMode() != GameMode.CREATIVE) {
                     handItem.setAmount(handItem.getAmount() - 1);

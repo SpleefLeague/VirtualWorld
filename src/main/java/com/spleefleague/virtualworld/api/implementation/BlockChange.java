@@ -6,6 +6,7 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import java.util.Objects;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 /**
