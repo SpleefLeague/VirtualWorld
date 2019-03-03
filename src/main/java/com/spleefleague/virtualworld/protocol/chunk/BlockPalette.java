@@ -7,13 +7,11 @@ package com.spleefleague.virtualworld.protocol.chunk;
 
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.server.v1_13_R1.Block;
-import net.minecraft.server.v1_13_R1.IBlockData;
-import net.minecraft.server.v1_13_R1.MinecraftKey;
-import net.minecraft.server.v1_13_R1.RegistryBlockID;
-import net.minecraft.server.v1_13_R1.RegistryBlocks;
+import net.minecraft.server.v1_13_R2.Block;
+import net.minecraft.server.v1_13_R2.IBlockData;
+import net.minecraft.server.v1_13_R2.RegistryBlockID;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_13_R1.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_13_R2.block.data.CraftBlockData;
 
 /**
  *
@@ -23,7 +21,6 @@ public abstract class BlockPalette {
     
     public static final BlockPalette GLOBAL = GlobalBlockPalette.instance();
     private static final RegistryBlockID<IBlockData> REGISTRY_ID = Block.REGISTRY_ID;
-    private static final RegistryBlocks<MinecraftKey, Block> REGISTRY = Block.REGISTRY;
     
     public abstract BlockData[] decode(byte[] data);
     public abstract BlockData[] getBlocks();

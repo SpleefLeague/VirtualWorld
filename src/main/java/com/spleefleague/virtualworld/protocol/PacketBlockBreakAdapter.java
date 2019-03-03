@@ -16,12 +16,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import net.minecraft.server.v1_13_R1.Block;
-import net.minecraft.server.v1_13_R1.EntityHuman;
-import net.minecraft.server.v1_13_R1.IBlockData;
+import net.minecraft.server.v1_13_R2.EntityPlayer;
+import net.minecraft.server.v1_13_R2.IBlockData;
 import org.bukkit.GameMode;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_13_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_13_R2.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
 
 /**
  *
@@ -48,7 +48,7 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         if(affected == null) {
             return;
         }
-        if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK || (ppcbd.getStatus() == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
+        if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK || (ppcbd.getStatus() == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType(), loc))) {
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 FakeBlockBreakEvent breakEvent = new FakeBlockBreakEvent(affected, event.getPlayer());
                 Bukkit.getPluginManager().callEvent(breakEvent);
@@ -68,30 +68,22 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         }
     }
     
-    public boolean isInstantlyDestroyed(Player player, Material type) {
+    public boolean isInstantlyDestroyed(Player player, Material type, BlockPosition bp) {
         if(type == Material.AIR) {
             return false;
         }
         if(player.getGameMode() == GameMode.CREATIVE) {
             return true;
         }
-        Block block = Block.getById(type.getId());
-        EntityHuman entityhuman = ((CraftPlayer)player).getHandle();
-        boolean hasBlock = entityhuman.hasBlock(block.getBlockData());
-        float strength = block.a((IBlockData)null, null, null);//Block strength
-        float destructionValue;
-        if(!hasBlock) {
-            destructionValue = entityhuman.b(block.getBlockData()) / strength / 100.0F;
+        IBlockData ibd = ((CraftBlockData)type.createBlockData()).getState();
+        EntityPlayer ep = ((CraftPlayer)player).getHandle();
+        net.minecraft.server.v1_13_R2.BlockPosition nmsbp = new net.minecraft.server.v1_13_R2.BlockPosition(bp.getX(), bp.getY(), bp.getZ());
+        float damage = ibd.getDamage(ep, ep.world, nmsbp);
+        boolean spigotOnGround = player.isOnGround();
+        boolean actualOnGround = groundStateManager.isOnGround(player);
+        if(!spigotOnGround && actualOnGround) {
+            damage *= 5;
         }
-        else if(strength <= 0.0F) {
-            return false;
-        }
-        else {
-            destructionValue = entityhuman.b(block.getBlockData()) / strength / 30.0F;
-        }
-        if(destructionValue < 0.2F || !groundStateManager.isOnGround(player)) {
-            return false;
-        }
-        return true;
+        return damage >= 1.0f;
     }
 }

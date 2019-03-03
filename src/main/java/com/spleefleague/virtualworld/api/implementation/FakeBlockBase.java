@@ -110,7 +110,7 @@ public class FakeBlockBase implements FakeBlock {
     
     @Override
     public Block getHandle() {
-        return chunk.getHandle().getBlock(x, y, z);
+        return chunk.getHandle().getBlock(x & 15, y, z & 15);
     }
 
     public void registerChanged(ChangeType type, BlockData oldState, Player cause) {

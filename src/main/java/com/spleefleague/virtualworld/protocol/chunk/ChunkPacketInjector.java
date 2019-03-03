@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minecraft.server.v1_13_R1.PacketPlayOutMapChunk;
+import net.minecraft.server.v1_13_R2.PacketPlayOutMapChunk;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.data.BlockData;
