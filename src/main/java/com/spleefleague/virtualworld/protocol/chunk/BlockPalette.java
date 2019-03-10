@@ -30,11 +30,11 @@ public abstract class BlockPalette {
     public abstract byte[] encode(BlockData[] data);
     public abstract boolean includePaletteLength();
     
-    private static int blockDataToId(BlockData data) {
+    public static int blockDataToId(BlockData data) {
         return REGISTRY_ID.getId(((CraftBlockData)data).getState());
     }
     
-    private static BlockData blockDataFromId(int id) {
+    public static BlockData blockDataFromId(int id) {
         IBlockData ibd = REGISTRY_ID.fromId(id);
         return CraftBlockData.fromData(ibd);
     }

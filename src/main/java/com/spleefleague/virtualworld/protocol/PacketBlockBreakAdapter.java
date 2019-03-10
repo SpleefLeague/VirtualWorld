@@ -12,6 +12,7 @@ import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.event.FakeBlockBreakEvent;
+import net.minecraft.server.v1_13_R2.EntityHuman;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -86,4 +87,31 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         }
         return damage >= 1.0f;
     }
+    
+//    public boolean isInstantlyDestroyed(Player player, Material type) {
+//        if(type == Material.AIR) {
+//            return false;
+//        }
+//        if(player.getGameMode() == GameMode.CREATIVE) {
+//            return true;
+//        }
+//        IBlockData ibd = ((CraftBlockData)type.createBlockData()).getState();
+//        EntityHuman entityhuman = ((CraftPlayer)player).getHandle();
+//        boolean hasBlock = entityhuman.hasBlock(ibd);
+//        float strength = ibd.getBlock().strength;
+//        float destructionValue;
+//        if(!hasBlock) {
+//            destructionValue = entityhuman.b(ibd) / strength / 100.0F;
+//        }
+//        else if(strength <= 0.0F) {
+//            return false;
+//        }
+//        else {
+//            destructionValue = entityhuman.b(ibd) / strength / 30.0F;
+//        }
+//        if(destructionValue < 0.2F || !groundStateManager.isOnGround(player)) {
+//            return false;
+//        }
+//        return true;
+//    }
 }

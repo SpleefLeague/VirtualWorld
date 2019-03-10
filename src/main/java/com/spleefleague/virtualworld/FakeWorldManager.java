@@ -15,6 +15,7 @@ import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.api.implementation.FakeChunkBase;
 import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
+import com.spleefleague.virtualworld.protocol.chunk.BlockPalette;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
@@ -82,7 +83,7 @@ public class FakeWorldManager implements Listener {
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
-                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to high
+                .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))//From high priority to low
                 .map(e -> ((FakeWorldBase)e.getKey()).getChunkAtRaw(x, z))
                 .filter(c -> c != null)
                 .flatMap(c -> c.getUsedBlocks().stream())
@@ -101,12 +102,13 @@ public class FakeWorldManager implements Listener {
                 .entrySet()
                 .stream()
                 .filter(e -> e.getKey().getHandle() == l.getWorld())
+                .filter(fw -> fw.getKey().getArea() == null || fw.getKey().getArea().isInside(l.toVector()))
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
-                .map(e -> e.getKey())
+                //.max((e1, e2) -> Integer.compare(e1.getValue(), e2.getValue()))
+                .map(Entry::getKey)
                 .filter(fw -> fw.getArea() == null || fw.getArea().isInside(l.toVector()))
                 .findFirst()
                 .orElse(null);
-                
     }
     
     public FakeBlock getBlockAt(Player player, Location l) {
@@ -119,6 +121,7 @@ public class FakeWorldManager implements Listener {
                 .stream()
                 .filter(e -> e.getKey().getHandle() == world)
                 .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
+                //.max((e1, e2) -> Integer.compare(e1.getValue(), e2.getValue()))
                 .map(e -> e.getKey())
                 .map(fw -> ((FakeWorldBase)fw).getBlockAtRaw(x, y, z))
                 .filter(o -> o != null)
@@ -219,7 +222,7 @@ public class FakeWorldManager implements Listener {
             FakeBlock block = change.getBlock();
             BlockData prevState = change.getPreviousState();
             wpsew.setLocation(new BlockPosition(block.getX(), block.getY(), block.getZ()));
-            wpsew.setData(prevState.getMaterial().getId());
+            wpsew.setData(BlockPalette.blockDataToId(prevState));
             wpsew.sendPacket(player);
         }
         mbchandler.changeBlocks(changes
