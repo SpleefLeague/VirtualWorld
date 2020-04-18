@@ -46,7 +46,7 @@ public abstract class BlockPalette {
             for (int i = 0; i < bdata.length; i++) {
                 byte damage = reader.readByte(4);
                 int id = reader.readInt(9);
-                bdata[i] = new ChunkBlockData(Material.getMaterial(id), damage);
+                bdata[i] = new ChunkBlockData(Material.values()[id], damage);
             }
             return bdata;
         }
@@ -107,7 +107,7 @@ public abstract class BlockPalette {
             for(int i = 0; i < data.length; i++) {
                 byte damage = (byte) (data[i] & 0xF);
                 int id = data[i] >> 4;
-                lookupTable[i] = new ChunkBlockData(Material.getMaterial(id), damage);
+                lookupTable[i] = new ChunkBlockData(Material.values()[id], damage);
             }
             return lookupTable;
         }

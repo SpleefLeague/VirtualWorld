@@ -1,13 +1,15 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayClientUseItem;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeBlock;
+import net.minecraft.server.v1_15_R1.BlockPosition;
+import net.minecraft.server.v1_15_R1.PacketPlayInUseItem;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -27,11 +29,9 @@ public class PacketBlockInteractAdapter extends PacketAdapter {
     @Override
     public void onPacketReceiving(PacketEvent event) {
         if(event.isCancelled()) return;
-        WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event.getPacket());
-        if (wrapper.getLocation().getY() < 0) {
-            return;
-        }
-        Location loc = wrapper.getLocation().toVector().toLocation(event.getPlayer().getWorld());
+        PacketPlayInUseItem packet = (PacketPlayInUseItem) event.getPacket().getHandle();
+        BlockPosition blockPos = packet.c().getBlockPosition();
+        Location loc = new Location(event.getPlayer().getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ());
         FakeBlock block = fwmanager.getBlockAt(event.getPlayer(), loc);
         if(block != null) {
             event.setCancelled(true);

@@ -1,9 +1,9 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayClientUseItem;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.spleefleague.virtualworld.FakeWorldManager;
@@ -40,8 +40,9 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
     public void onPacketReceiving(PacketEvent event) {
         if(event.isCancelled()) return;
         Player player = event.getPlayer();
-        WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event.getPacket());
+        PacketContainer packetContainer = event.getPacket();
         Vector direction = new Vector(0, 0, 0);
+        /*
         switch(wrapper.getFace()) {
             case UP: direction.setY(1); break;
             case DOWN: direction.setY(-1); break;
@@ -92,6 +93,7 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
                 player.sendBlockChange(new Location(player.getWorld(), placeLocation.getX(), placeLocation.getY(), placeLocation.getZ()), Material.AIR, (byte)0);
             }, 1);
         }
+        */
     }
 
     @Override

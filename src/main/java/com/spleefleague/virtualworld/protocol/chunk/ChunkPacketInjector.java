@@ -1,9 +1,8 @@
 package com.spleefleague.virtualworld.protocol.chunk;
 
-import com.comphenix.packetwrapper.WrapperPlayServerMapChunk;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.spleefleague.virtualworld.api.FakeBlock;
-import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -15,7 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minecraft.server.v1_12_R1.PacketPlayOutMapChunk;
+import net.minecraft.server.v1_15_R1.PacketPlayOutMapChunk;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 
@@ -25,12 +24,15 @@ import org.bukkit.World.Environment;
  */
 public class ChunkPacketInjector {
     
+    @Deprecated
     public static void setBlocksPacketMapChunk(World world, PacketContainer packetContainer, Collection<FakeBlock> chunkBlocks) {
         if (packetContainer.getHandle() instanceof PacketPlayOutMapChunk) {
+            System.out.println("This doesn't work anymore, sorry!");
+            Thread.dumpStack();
+            /*
             PacketPlayOutMapChunk packet = (PacketPlayOutMapChunk) packetContainer.getHandle();
-            WrapperPlayServerMapChunk wpsmc = new WrapperPlayServerMapChunk(packetContainer);
-            int x = wpsmc.getChunkX();
-            int z = wpsmc.getChunkZ();
+            int x = packetContainer.getIntegers().read(0);
+            int z = packetContainer.getIntegers().read(1);
             Map<Integer, Collection<FakeBlock>> verified = toSectionMap(chunkBlocks);
             if (verified.size() > 0) {
                 try {
@@ -57,6 +59,7 @@ public class ChunkPacketInjector {
                     Logger.getLogger(ChunkPacketInjector.class.getName()).log(Level.SEVERE, "Debug info: ({0}|{1})", new Object[]{x, z});
                 }
             }
+            */
         }
     }
 

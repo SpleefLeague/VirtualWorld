@@ -1,9 +1,9 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayClientBlockDig;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType;
@@ -17,11 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import net.minecraft.server.v1_12_R1.Block;
-import net.minecraft.server.v1_12_R1.EntityHuman;
-import net.minecraft.server.v1_12_R1.IBlockData;
 import org.bukkit.GameMode;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
 
 /**
  *
@@ -41,20 +37,20 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
     @Override
     public void onPacketReceiving(PacketEvent event) {
         if(event.isCancelled()) return;
-        WrapperPlayClientBlockDig ppcbd = new WrapperPlayClientBlockDig(event.getPacket());
-        BlockPosition loc = ppcbd.getLocation();
+        PacketContainer packetContainer = event.getPacket();
+        BlockPosition loc = packetContainer.getBlockPositionModifier().read(0);
         Player p = event.getPlayer();
         FakeBlockBase affected = (FakeBlockBase)fakeWorldManager.getBlockAt(p, p.getLocation().getWorld(), loc.getX(), loc.getY(), loc.getZ());
         if(affected == null) {
             return;
         }
-        if(ppcbd.getStatus() == PlayerDigType.STOP_DESTROY_BLOCK || (ppcbd.getStatus() == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
+        if(packetContainer.getPlayerDigTypes().read(0) == PlayerDigType.STOP_DESTROY_BLOCK || (packetContainer.getPlayerDigTypes().read(0) == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 FakeBlockBreakEvent breakEvent = new FakeBlockBreakEvent(affected, event.getPlayer());
                 Bukkit.getPluginManager().callEvent(breakEvent);
                 if(breakEvent.isCancelled()) {
                     Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                        p.sendBlockChange(new Location(p.getWorld(), loc.getX(), loc.getY(), loc.getZ()), affected.getType(), affected.getData());
+                        p.sendBlockChange(new Location(p.getWorld(), loc.getX(), loc.getY(), loc.getZ()), affected.getType().createBlockData());
                     }, 1);
                     return;
                 }
@@ -76,6 +72,8 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         if(player.getGameMode() == GameMode.CREATIVE) {
             return true;
         }
+        return true;
+        /*
         Block block = Block.getById(type.getId());
         EntityHuman entityhuman = ((CraftPlayer)player).getHandle();
         boolean hasBlock = entityhuman.hasBlock(block.getBlockData());
@@ -94,5 +92,6 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
             return false;
         }
         return true;
+        */
     }
 }

@@ -25,7 +25,7 @@ public class FakeBlockBase implements FakeBlock {
         this.z = z;
         if(chunk != null) {
             Block handle = getHandle();
-            blockdata = new BlockData(handle.getType(), handle.getData());
+            blockdata = new BlockData(handle.getType(), (byte) 0);
         }
         else {
             blockdata = null;
@@ -117,7 +117,7 @@ public class FakeBlockBase implements FakeBlock {
     
     @Override
     public Block getHandle() {
-        return chunk.getHandle().getBlock(x, y, z);
+        return chunk.getHandle().getBlock(x & 15, y, z & 15);
     }
 
     public void registerChanged(ChangeType type, BlockData oldState, Player cause) {

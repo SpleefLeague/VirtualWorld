@@ -1,10 +1,11 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayServerUnloadChunk;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.spleefleague.virtualworld.VirtualWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -29,9 +30,10 @@ public class PacketChunkUnloadAdapter extends PacketAdapter {
     @Override
     public void onPacketSending(PacketEvent event) {
         if(event.isCancelled()) return;
-        WrapperPlayServerUnloadChunk wpsuc = new WrapperPlayServerUnloadChunk(event.getPacket());
+        PacketContainer packetContainer = event.getPacket();
+        ChunkCoordIntPair chunkCoord = new ChunkCoordIntPair(packetContainer.getIntegers().read(0), packetContainer.getIntegers().read(1));
         Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
-            Chunk chunk = event.getPlayer().getWorld().getChunkAt(wpsuc.getChunkX(), wpsuc.getChunkZ());
+            Chunk chunk = event.getPlayer().getWorld().getChunkAt(chunkCoord.getChunkX(), chunkCoord.getChunkZ());
             mbchandler.removeChunk(event.getPlayer(), chunk);
         });
     }

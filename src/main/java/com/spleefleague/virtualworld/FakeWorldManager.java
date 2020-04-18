@@ -5,8 +5,11 @@
  */
 package com.spleefleague.virtualworld;
 
-import com.comphenix.packetwrapper.WrapperPlayServerWorldEvent;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.spleefleague.virtualworld.api.implementation.BlockChange;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.FakeBlock;
@@ -17,7 +20,10 @@ import com.spleefleague.virtualworld.api.implementation.FakeChunkBase;
 import com.spleefleague.virtualworld.api.implementation.FakeWorldBase;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,16 +34,15 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import net.minecraft.server.v1_12_R1.EntityPlayer;
-import net.minecraft.server.v1_12_R1.SoundEffectType;
-import net.minecraft.server.v1_12_R1.SoundCategory;
+import net.minecraft.server.v1_15_R1.EntityPlayer;
+import net.minecraft.server.v1_15_R1.SoundEffectType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_15_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_15_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -76,6 +81,7 @@ public class FakeWorldManager implements Listener {
     }
     
     public Collection<FakeBlock> getBlocksInChunk(Player player, int x, int z) {
+        if (!observedWorlds.containsKey(player)) return Collections.EMPTY_LIST;
         return observedWorlds.get(player)
                 .entrySet()
                 .stream()
@@ -130,7 +136,7 @@ public class FakeWorldManager implements Listener {
             worlds.put(world, priority);
             Collection<FakeBlock> newChanges = ((FakeWorldBase)world).getUsedBlocks()
                     .stream()
-                    .filter(fb -> getBlockAt(player, fb.getLocation()).getWorld() == world)
+                    .filter(fb -> fb != null && fb.getWorld() == world)
                     .collect(Collectors.toSet());
             sendDirectRaw(player, newChanges);
         }
@@ -152,7 +158,7 @@ public class FakeWorldManager implements Listener {
                             //Fake block only to be used to hold location + material.
                             replacement = new FakeBlockBase((FakeChunkBase)world.getChunkAt(fb.getX() >> 4, fb.getZ() >> 4), fb.getX(), fb.getY(), fb.getZ());
                             ((FakeBlockBase)replacement)._setType(replacement.getHandle().getType());
-                            ((FakeBlockBase)replacement)._setData(replacement.getHandle().getData());
+                            //((FakeBlockBase)replacement)._setData(replacement.getHandle().getData());
                         }
                         return replacement;
                     })
@@ -210,15 +216,18 @@ public class FakeWorldManager implements Listener {
     
     private void sendBreak(Player player, Collection<BlockChange> changes) {
         if(changes == null || changes.isEmpty()) return;
-        WrapperPlayServerWorldEvent wpsew = new WrapperPlayServerWorldEvent();
-        wpsew.setEffectId(2001);
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
         for(BlockChange change : changes) {
+            packetContainer.getBlockData().write(0, WrappedBlockData.createData(change.getBlock().getType()));
+            packetContainer.getBlockPositionModifier().write(0, new BlockPosition(change.getBlock().getLocation().toVector()));
             if(change.getCause() == player) continue;
             FakeBlock block = change.getBlock();
             BlockData prevState = change.getPreviousState();
-            wpsew.setLocation(new BlockPosition(block.getX(), block.getY(), block.getZ()));
-            wpsew.setData(prevState.getType().getId());
-            wpsew.sendPacket(player);
+            try {
+                ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
+            } catch (InvocationTargetException ex) {
+                Logger.getLogger(FakeWorldManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         mbchandler.changeBlocks(changes
                 .stream()
@@ -232,13 +241,18 @@ public class FakeWorldManager implements Listener {
                 .stream()
                 .map(bc -> bc.getBlock())
                 .collect(Collectors.toSet()), player);
-        net.minecraft.server.v1_12_R1.World world = ((CraftWorld)player.getWorld()).getHandle();
+        net.minecraft.server.v1_15_R1.World world = ((CraftWorld)player.getWorld()).getHandle();
         EntityPlayer entity = ((CraftPlayer) player).getHandle();
         for(BlockChange change : changes) {
             if(change.getCause() == player) continue;
             FakeBlock block = change.getBlock();
             SoundEffectType effectType = breakSounds.get(block.getType());
-            world.a(entity, new net.minecraft.server.v1_12_R1.BlockPosition(block.getX(), block.getY(), block.getZ()), effectType.e(), SoundCategory.BLOCKS, (effectType.a() + 1.0F) / 2.0F, effectType.b() * 0.8F);
+            world.playSound(entity,
+                    new net.minecraft.server.v1_15_R1.BlockPosition(block.getX(), block.getY(), block.getZ()),
+                    effectType.e(),
+                    net.minecraft.server.v1_15_R1.SoundCategory.BLOCKS,
+                    (effectType.a() + 1.0F) / 2.0F,
+                    effectType.b() * 0.8F);
         }
     }   
     
@@ -275,12 +289,13 @@ public class FakeWorldManager implements Listener {
     
     private static Map<Material, SoundEffectType> generateBreakSounds() {
         Map<Material, SoundEffectType> breakSounds = new HashMap<>();
-        for (net.minecraft.server.v1_12_R1.Block block : net.minecraft.server.v1_12_R1.Block.REGISTRY) {
+        for (net.minecraft.server.v1_15_R1.IBlockData blockData : net.minecraft.server.v1_15_R1.Block.REGISTRY_ID) {
+            net.minecraft.server.v1_15_R1.Block block = blockData.getBlock();
             try {
-                Field effectField = net.minecraft.server.v1_12_R1.Block.class.getDeclaredField("stepSound");
+                Field effectField = net.minecraft.server.v1_15_R1.Block.class.getDeclaredField("stepSound");
                 effectField.setAccessible(true);
                 SoundEffectType effectType = (SoundEffectType) effectField.get((Object) block);
-                breakSounds.put(CraftMagicNumbers.getMaterial((net.minecraft.server.v1_12_R1.Block) block), effectType);
+                breakSounds.put(CraftMagicNumbers.getMaterial((net.minecraft.server.v1_15_R1.Block) block), effectType);
             } catch (IllegalAccessException | IllegalArgumentException | NoSuchFieldException | SecurityException ex) {
                 Logger.getLogger(FakeWorldManager.class.getName()).log(Level.SEVERE, null, ex);
             }

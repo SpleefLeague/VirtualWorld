@@ -44,7 +44,6 @@ public class FakeChunkBase implements FakeChunk {
     
     @Override
     public FakeBlockBase getBlock(int x, int y, int z) {
-        //System.out.println(new Vector(this.x * 16 + x, y, this.z * 16 + z));
         if(area != null && !area.isInside(new Vector(this.x * 16 + x, y, this.z * 16 + z))) {
             return null;
         }
