@@ -31,7 +31,7 @@ public class PacketBlockInteractAdapter extends PacketAdapter {
         PacketPlayInUseItem packet = (PacketPlayInUseItem) event.getPacket().getHandle();
         BlockPosition blockPos = packet.c().getBlockPosition();
         Location loc = new Location(event.getPlayer().getWorld(), blockPos.getX(), blockPos.getY(), blockPos.getZ());
-        FakeBlock block = fwmanager.getBlockAt(event.getPlayer(), loc);
+        FakeBlock block = fwmanager.getBlockAt(event.getPlayer().getUniqueId(), loc);
         if(block != null) {
             event.setCancelled(true);
         }

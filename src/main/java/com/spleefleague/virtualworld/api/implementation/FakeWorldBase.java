@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.bukkit.Effect;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -132,6 +133,15 @@ public class FakeWorldBase implements FakeWorld {
 
     protected void notifyChange(BlockChange change) {
         changes.add(change);
+        if (change.getType().equals(BlockChange.ChangeType.BREAK)) {
+            Set<Player> targets = fwm.getSubscribers(this);
+            targets.forEach(target -> {
+                if (!target.getUniqueId().equals(change.getCause().getUniqueId())) {
+                    target.playSound(change.getBlock().getLocation(), Sound.BLOCK_SNOW_BREAK, 1, 0.8f);
+                    target.spawnParticle(Particle.BLOCK_DUST, change.getBlock().getLocation().clone().add(0.5, 0.5, 0.5), 20, 0.25, 0.25, 0.25, Material.SNOW_BLOCK.createBlockData());
+                }
+            });
+        }
     }
     
     private long getKey(int x, int z) {

@@ -40,11 +40,13 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
         PacketContainer packetContainer = event.getPacket();
         BlockPosition loc = packetContainer.getBlockPositionModifier().read(0);
         Player p = event.getPlayer();
-        FakeBlockBase affected = (FakeBlockBase)fakeWorldManager.getBlockAt(p, p.getLocation().getWorld(), loc.getX(), loc.getY(), loc.getZ());
+        FakeBlockBase affected = (FakeBlockBase)fakeWorldManager.getBlockAt(p.getUniqueId(), p.getLocation().getWorld(), loc.getX(), loc.getY(), loc.getZ());
         if(affected == null) {
             return;
         }
-        if(packetContainer.getPlayerDigTypes().read(0) == PlayerDigType.STOP_DESTROY_BLOCK || (packetContainer.getPlayerDigTypes().read(0) == PlayerDigType.START_DESTROY_BLOCK && isInstantlyDestroyed(p, affected.getType()))) {
+        if(packetContainer.getPlayerDigTypes().read(0) == PlayerDigType.STOP_DESTROY_BLOCK
+                || (packetContainer.getPlayerDigTypes().read(0) == PlayerDigType.START_DESTROY_BLOCK
+                && isInstantlyDestroyed(p, affected.getType()))) {
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 FakeBlockBreakEvent breakEvent = new FakeBlockBreakEvent(affected, event.getPlayer());
                 Bukkit.getPluginManager().callEvent(breakEvent);

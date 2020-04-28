@@ -132,7 +132,7 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
 
         while (true) {
             Location loc = new Location(world, x, y, z);
-            FakeBlock fb = fwmanager.getBlockAt(player, loc);
+            FakeBlock fb = fwmanager.getBlockAt(player.getUniqueId(), loc);
             //Transparent fakeblocks (AIR) have higher precedence than existing normal blocks.
             if(fb != null) {
                 if(!fb.getType().isTransparent()) {

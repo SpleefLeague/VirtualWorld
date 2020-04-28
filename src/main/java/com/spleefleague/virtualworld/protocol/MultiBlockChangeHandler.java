@@ -3,6 +3,7 @@ package com.spleefleague.virtualworld.protocol;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
@@ -55,16 +56,23 @@ public class MultiBlockChangeHandler implements Listener {
         if (!affected.isEmpty()) {
             World world = affected.stream().findAny().get().getWorld();
             net.minecraft.server.v1_15_R1.Chunk chunk = ((CraftChunk) world.getChunkAt(mbcd.getChunkX(), mbcd.getChunkZ())).getHandle();
-            PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
-            packetContainer.getChunkCoordIntPairs().write(0, new ChunkCoordIntPair(chunk.bukkitChunk.getX(), chunk.bukkitChunk.getZ()));
-            packetContainer.getMultiBlockChangeInfoArrays().write(0, mbcd.getData());
             for (Player player : affected) {
-                if (player != null && loadedChunks.containsKey(player.getUniqueId()) && loadedChunks.get(player.getUniqueId()).contains(mbcd.getChunk())) {
-                    try {
-                        ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
-                    } catch (InvocationTargetException ex) {
-                        Logger.getLogger(MultiBlockChangeHandler.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                if (player != null) {
+                    Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
+                        for (MultiBlockChangeInfo data : mbcd.getData()) {
+                            PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
+                            if (data != null) {
+                                BlockPosition blockPos = new BlockPosition(chunk.bukkitChunk.getX() * 16 + data.getX(), data.getY(), chunk.bukkitChunk.getZ() * 16 + data.getZ());
+                                packetContainer.getBlockPositionModifier().write(0, blockPos);
+                                packetContainer.getBlockData().write(0, data.getData());
+                                try {
+                                    ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
+                                } catch (InvocationTargetException ex) {
+                                    Logger.getLogger(MultiBlockChangeHandler.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            }
+                        }
+                    }, 1L);
                 }
             }
         }

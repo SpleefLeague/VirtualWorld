@@ -30,6 +30,7 @@ public class PacketChunkUnloadAdapter extends PacketAdapter {
     @Override
     public void onPacketSending(PacketEvent event) {
         if(event.isCancelled()) return;
+        //if (!event.getPlayer().equals(VirtualWorld.getInstance().getDefaultWorld())) return;
         PacketContainer packetContainer = event.getPacket();
         ChunkCoordIntPair chunkCoord = new ChunkCoordIntPair(packetContainer.getIntegers().read(0), packetContainer.getIntegers().read(1));
         Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
