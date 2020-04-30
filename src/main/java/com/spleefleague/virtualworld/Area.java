@@ -38,4 +38,8 @@ public class Area {
     public boolean isInside(Vector loc) {
         return isInsideX(loc.getX()) && isInsideY(loc.getY()) && isInsideZ(loc.getZ());
     }
+    
+    public boolean isInside(int x, int y, int z) {
+        return isInsideX(x) && isInsideY(y) && isInsideZ(z);
+    }
 }

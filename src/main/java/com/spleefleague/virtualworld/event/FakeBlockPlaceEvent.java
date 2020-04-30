@@ -2,7 +2,9 @@ package com.spleefleague.virtualworld.event;
 
 import com.spleefleague.virtualworld.api.FakeBlock;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockMultiPlaceEvent;
 
 /**
  *
@@ -10,24 +12,18 @@ import org.bukkit.entity.Player;
  */
 public class FakeBlockPlaceEvent extends FakeBlockEvent{
 
-    private final Material type;
-    private final byte data;
+    private final BlockData blockData;
     
     public FakeBlockPlaceEvent(Player player, FakeBlock replaced, Material targetType) {
-        this(player, replaced, targetType, (byte)0);
+        this(player, replaced, targetType.createBlockData());
     }
     
-    public FakeBlockPlaceEvent(Player player, FakeBlock replaced, Material targetType, byte targetData) {
+    public FakeBlockPlaceEvent(Player player, FakeBlock replaced, BlockData blockData) {
         super(replaced, player);
-        this.type = targetType;
-        this.data = targetData;
+        this.blockData = blockData;
     }
-    
-    public Material getTargetType() {
-        return type;
-    }
-    
-    public byte getTargetData() {
-        return data;
+
+    public BlockData getBlockData() {
+        return blockData;
     }
 }

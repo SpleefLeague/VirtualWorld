@@ -18,18 +18,18 @@ import org.bukkit.block.data.BlockData;
 public class ChunkSection {
     
     private final BlockData[] blocks;
-    private final byte[] lightData;
     private boolean modified = false;
     private BlockData[] paletteBlocks;//Cached palette blocks array
     private final Set<BlockData> paletteBlockSet;
+    private short nonAirCount;
     
     /**
      * @param blockdata Block data array described as in http://wiki.vg/Chunk_Format
-     * @param lightData The chunk's original lighting data
      * @param palette Block palette object
      */
-    public ChunkSection(byte[] blockdata, byte[] lightData, BlockPalette palette) {
+    public ChunkSection(byte[] blockdata, short nonAirCount, BlockPalette palette) {
         this.blocks = palette.decode(blockdata);
+        this.nonAirCount = nonAirCount;
         paletteBlocks = palette.getBlocks();//Null for the global palette
         if(paletteBlocks != null) {
             paletteBlockSet = new HashSet<>();
@@ -40,19 +40,25 @@ public class ChunkSection {
         else {
             paletteBlockSet = null;
         }
-        this.lightData = lightData;
     }
     
     protected ChunkSection(boolean overworld) {
         BlockData air = Material.AIR.createBlockData();
         blocks = new BlockData[4096];
         Arrays.fill(blocks, air);
+        this.nonAirCount = 0;
         //An empty, unsent chunksection contains air blocks
         paletteBlocks = new BlockData[]{air};
         paletteBlockSet = new HashSet<>();
         paletteBlockSet.add(air);
-        lightData = new byte[overworld ? 4096 : 2048];
-        Arrays.fill(lightData, (byte)-1);//Default light data, everything is bright
+    }
+
+    public short getNonAirCount() {
+        return nonAirCount;
+    }
+
+    public void setNonAirCount(short nonAirCount) {
+        this.nonAirCount = nonAirCount;
     }
     
     public BlockData getBlockRelative(int x, int y, int z) {
@@ -85,9 +91,5 @@ public class ChunkSection {
             paletteBlocks = paletteBlockSet.toArray(new BlockData[0]);
         }
         return paletteBlocks;
-    }
-    
-    public byte[] getLightingData() {
-        return lightData;
     }
 }

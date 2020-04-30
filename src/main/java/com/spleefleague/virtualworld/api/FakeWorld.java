@@ -20,10 +20,24 @@ import org.bukkit.util.Vector;
  */
 public interface FakeWorld {
     
+    /**
+     * Enables fast editing mode. In fast editing mode, block changes are not logged, 
+     * and are instead determined, once fast editing mode is disabled again.
+     * @param fastEditing 
+     */
+    void setFastEditing(boolean fastEditing);
+    boolean isFastEditing();
+    /**
+     * Resets all FakeBlocks to the corresponding real Block data
+     */
+    void reset();
     FakeChunk getChunkAt(int x, int z);
     FakeBlock getBlockAt(int x, int y, int z);
+    boolean isFakeBlockAt(int x, int y, int z);
     FakeBlock getBlockAt(Location loc);
     FakeBlock getBlockAt(Vector vec);
+    boolean isAllowBuilding();
+    void setAllowBuilding(boolean allowBuilding);
     Collection<? extends FakeBlock> getUsedBlocks(); 
     World getHandle();
     Area getArea();

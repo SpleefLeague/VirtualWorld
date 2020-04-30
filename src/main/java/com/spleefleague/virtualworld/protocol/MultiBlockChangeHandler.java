@@ -1,24 +1,28 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayServerMultiBlockChange;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeBlock;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.minecraft.server.v1_15_R1.PacketPlayOutMultiBlockChange;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_13_R2.CraftChunk;
+import org.bukkit.craftbukkit.v1_15_R1.CraftChunk;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -49,13 +53,19 @@ public class MultiBlockChangeHandler implements Listener {
     private void sendMultiBlockChange(MultiBlockChangeData mbcd, Collection<Player> affected) {
         if (!affected.isEmpty()) {
             World world = affected.stream().findAny().get().getWorld();
-            net.minecraft.server.v1_13_R2.Chunk chunk = ((CraftChunk) world.getChunkAt(mbcd.getChunkX(), mbcd.getChunkZ())).getHandle();
-            WrapperPlayServerMultiBlockChange wrapper = new WrapperPlayServerMultiBlockChange();
-            wrapper.setChunk(new ChunkCoordIntPair(chunk.locX, chunk.locZ));
-            wrapper.setRecords(mbcd.getData());
+            net.minecraft.server.v1_15_R1.Chunk chunk = ((CraftChunk) world.getChunkAt(mbcd.getChunkX(), mbcd.getChunkZ())).getHandle();
+            PacketPlayOutMultiBlockChange packet = new PacketPlayOutMultiBlockChange();
+            PacketContainer container = PacketContainer.fromPacket(packet);
+            container.getChunkCoordIntPairs().write(0, new ChunkCoordIntPair(chunk.getPos().x, chunk.getPos().z));
+            container.getMultiBlockChangeInfoArrays().write(0, mbcd.getData());
             for (Player player : affected) {
                 if (player != null && loadedChunks.containsKey(player.getUniqueId()) && loadedChunks.get(player.getUniqueId()).contains(mbcd.getChunk())) {
-                    wrapper.sendPacket(player.getPlayer());
+                    try {
+                        VirtualWorld.getInstance().getProtocolManager().sendServerPacket(player, container, false);
+                    } catch (InvocationTargetException ex) {
+                        Logger.getLogger(MultiBlockChangeHandler.class.getName()).log(Level.SEVERE, null, ex);
+                        break;
+                    }
                 }
             }
         }

@@ -4,12 +4,14 @@ import com.spleefleague.virtualworld.Area;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeWorld;
+import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -29,6 +31,8 @@ public class FakeWorldBase implements FakeWorld {
     private final Area area;
     private final Set<BlockChange> changes;
     private final FakeWorldManager fwm;
+    private boolean fastEditing;
+    private boolean allowBuilding = false;
     
     public FakeWorldBase(World world, Area area) {
         this.chunks = new HashMap<>();
@@ -36,6 +40,16 @@ public class FakeWorldBase implements FakeWorld {
         this.handle = world;
         this.area = area;
         this.fwm = VirtualWorld.getInstance().getFakeWorldManager();
+    }
+
+    @Override
+    public boolean isAllowBuilding() {
+        return allowBuilding;
+    }
+    
+    @Override
+    public void setAllowBuilding(boolean allowBuilding) {
+        this.allowBuilding = allowBuilding;
     }
     
     @Override
@@ -98,6 +112,17 @@ public class FakeWorldBase implements FakeWorld {
     }
     
     @Override
+    public boolean isFakeBlockAt(int x, int y, int z) {
+        FakeChunkBase chunk = getChunkAtRaw(x >> 4, z >> 4);
+        if(chunk != null) {
+            return chunk.isFakeBlock(x & 15, y, z & 15);
+        }
+        else {
+            return false;
+        }
+    }
+    
+    @Override
     public FakeBlockBase getBlockAt(Location loc) {
         return getBlockAt(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
@@ -138,13 +163,17 @@ public class FakeWorldBase implements FakeWorld {
         long key = Integer.toUnsignedLong(x);
         return key << 32 | Integer.toUnsignedLong(z);
     }
-
-    @Override
-    public Collection<FakeBlockBase> getUsedBlocks() {
+    
+    private Stream<FakeBlockBase> getUsedBlocksStream() {
         return chunks
                 .values()
                 .stream()
-                .flatMap(fc -> fc.getUsedBlocks().stream())
+                .flatMap(fc -> fc.getUsedBlocks().stream());
+    }
+
+    @Override
+    public Collection<FakeBlockBase> getUsedBlocks() {
+        return getUsedBlocksStream()
                 .collect(Collectors.toSet());
     }
 
@@ -214,5 +243,31 @@ public class FakeWorldBase implements FakeWorld {
         Set<Player> targets = fwm.getSubscribers(this);
         if(targets.isEmpty()) return;
         targets.forEach(p -> p.playEffect(location, effect, data));
+    }
+
+    @Override
+    public void reset() {
+        this.chunks.values().forEach(FakeChunkBase::reset);
+    }
+
+    @Override
+    public boolean isFastEditing() {
+        return fastEditing;
+    }
+    
+    @Override
+    public void setFastEditing(boolean fastEditing) {
+        if(fastEditing && !this.fastEditing) {
+            calculateBlockChanges();
+        }
+        this.fastEditing = fastEditing;
+    }
+    
+    private void calculateBlockChanges() {
+        getUsedBlocksStream()
+                .filter(FakeBlockBase::hasChanged)
+                .peek(FakeBlockBase::resetFastEditingMode)
+                .map(fb -> new BlockChange(fb, ChangeType.PLUGIN, null, null))
+                .forEach(fb -> notifyChange(fb));
     }
 }

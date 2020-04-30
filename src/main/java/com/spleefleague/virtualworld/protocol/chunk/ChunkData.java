@@ -12,7 +12,7 @@ package com.spleefleague.virtualworld.protocol.chunk;
 public class ChunkData {
     
     private final ChunkSection[] sections;
-    private final byte[] additionalData; //Should be biome data
+    private final byte[] additionalData;
     
     public ChunkData(ChunkSection[] sections, byte[] additionalData) {
         this.sections = sections;

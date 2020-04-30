@@ -7,11 +7,11 @@ package com.spleefleague.virtualworld.protocol.chunk;
 
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.server.v1_13_R2.Block;
-import net.minecraft.server.v1_13_R2.IBlockData;
-import net.minecraft.server.v1_13_R2.RegistryBlockID;
+import net.minecraft.server.v1_15_R1.Block;
+import net.minecraft.server.v1_15_R1.IBlockData;
+import net.minecraft.server.v1_15_R1.RegistryBlockID;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_13_R2.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_15_R1.block.data.CraftBlockData;
 
 /**
  *
@@ -45,7 +45,7 @@ public abstract class BlockPalette {
     
     public static BlockPalette createPalette(BlockData[] data) {
         int bitsPerBlock = Math.max(32 - Integer.numberOfLeadingZeros(data.length - 1), 4);
-        if(bitsPerBlock < 10) {
+        if(bitsPerBlock <= 8) {
             return new EncodedBlockPalette(data, bitsPerBlock);
         }
         else {
@@ -87,7 +87,7 @@ public abstract class BlockPalette {
 
         @Override
         public byte[] encode(BlockData[] data) {
-            byte[] array = new byte[6656];
+            byte[] array = new byte[512 * getBitsPerBlock()];
             ProtocolLongArrayBitWriter writer = new ProtocolLongArrayBitWriter(array);
             for(BlockData block : data) {
                 writer.writeInt(blockDataToId(block), 14);
@@ -156,7 +156,7 @@ public abstract class BlockPalette {
 
         @Override
         public byte[] encode(BlockData[] data) {
-            byte[] array = new byte[512 * bitsPerBlock];
+            byte[] array = new byte[512 * bitsPerBlock];//16^3 / 8
             ProtocolLongArrayBitWriter writer = new ProtocolLongArrayBitWriter(array);
             Map<BlockData, Integer> lookup = new HashMap<>();
             for(int i = 0; i < lookupTable.length; i++) {

@@ -8,7 +8,9 @@ package com.spleefleague.virtualworld;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.spleefleague.virtualworld.protocol.MultiBlockChangeHandler;
+import com.spleefleague.virtualworld.protocol.NoClipHandler;
 import com.spleefleague.virtualworld.protocol.PacketBlockBreakAdapter;
+import com.spleefleague.virtualworld.protocol.PacketBlockChangeAdapter;
 import com.spleefleague.virtualworld.protocol.PacketBlockInteractAdapter;
 import com.spleefleague.virtualworld.protocol.PacketBlockPlaceAdapter;
 import com.spleefleague.virtualworld.protocol.PacketChunkLoadAdapter;
@@ -28,6 +30,9 @@ public class VirtualWorld extends JavaPlugin {
     private ProtocolManager manager;
     private FakeWorldManager fakeWorldManager;
     private PacketOnGroundAdapter groundStateManager;
+    private PacketChunkUnloadAdapter chunkUnloadManager;
+    public PacketChunkLoadAdapter chunkLoadManager;
+    private NoClipHandler noclipHandler;
     
     @Override
     public void onEnable() {
@@ -36,12 +41,19 @@ public class VirtualWorld extends JavaPlugin {
         MultiBlockChangeHandler mbchandler = MultiBlockChangeHandler.init();
         fakeWorldManager = FakeWorldManager.init(mbchandler);
         groundStateManager = new PacketOnGroundAdapter();
+        chunkUnloadManager = new PacketChunkUnloadAdapter(mbchandler);
+        chunkLoadManager = new PacketChunkLoadAdapter(fakeWorldManager, mbchandler);
+        noclipHandler = new NoClipHandler();
         Bukkit.getPluginManager().registerEvents(groundStateManager, this);
+        Bukkit.getPluginManager().registerEvents(noclipHandler, this);
+        Bukkit.getPluginManager().registerEvents(chunkUnloadManager, this);
+        Bukkit.getPluginManager().registerEvents(chunkLoadManager, this);
         manager.addPacketListener(groundStateManager);
-        manager.addPacketListener(new PacketChunkLoadAdapter(fakeWorldManager, mbchandler));
-        manager.addPacketListener(new PacketChunkUnloadAdapter(mbchandler));
+        manager.addPacketListener(chunkLoadManager);
+        manager.addPacketListener(chunkUnloadManager);
         manager.addPacketListener(new PacketBlockBreakAdapter(fakeWorldManager, groundStateManager));
         manager.addPacketListener(new PacketBlockInteractAdapter(fakeWorldManager));
+        manager.addPacketListener(new PacketBlockChangeAdapter(fakeWorldManager));
         manager.addPacketListener(new PacketBlockPlaceAdapter(fakeWorldManager));
     }
     
@@ -52,9 +64,21 @@ public class VirtualWorld extends JavaPlugin {
     public FakeWorldManager getFakeWorldManager() {
         return fakeWorldManager;
     }
+
+    public NoClipHandler getNoclipHandler() {
+        return noclipHandler;
+    }
     
     public boolean isOnGround(Player p) {
         return groundStateManager.isOnGround(p);
+    }
+    
+    public void setChunkUnloadingDisabled(Player p, boolean disabled) {
+        chunkUnloadManager.setChunkUnloadsDisabled(p, disabled);
+    }
+    
+    public void setChunkLoadingDisabled(Player p, boolean disabled) {
+        chunkUnloadManager.setChunkUnloadsDisabled(p, disabled);
     }
     
     public static VirtualWorld getInstance() {

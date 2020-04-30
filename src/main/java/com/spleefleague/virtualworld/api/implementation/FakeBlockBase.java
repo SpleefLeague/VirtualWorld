@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
@@ -18,6 +19,7 @@ public class FakeBlockBase implements FakeBlock {
     private final FakeChunkBase chunk;
     private final int x, y, z;
     private BlockData blockData;
+    private BlockData originalBlockData;
 
     public FakeBlockBase(FakeChunkBase chunk, int x, int y, int z) {
         this.chunk = chunk;
@@ -63,10 +65,6 @@ public class FakeBlockBase implements FakeBlock {
         return z;
     }
 
-    public BlockData getBlockdata() {
-        return blockData;
-    }
-
     @Override
     public Material getType() {
         return blockData.getMaterial();
@@ -90,9 +88,12 @@ public class FakeBlockBase implements FakeBlock {
     @Override
     public void setBlockData(BlockData blockData, boolean force) {
         if(!force && getHandle().getType() != Material.AIR) return;
+        if(blockData.equals(this.blockData)) return;
         BlockData oldState = blockData.clone();
         _setBlockData(blockData);
-        registerChanged(ChangeType.PLUGIN, oldState, null);
+        if(!chunk.getWorld().isFastEditing()) {
+            registerChanged(ChangeType.PLUGIN, oldState, null);
+        }
     }
     
     public void _setType(Material type) {
@@ -100,6 +101,9 @@ public class FakeBlockBase implements FakeBlock {
     }
     
     public void _setBlockData(BlockData blockData) {
+        if(chunk.getWorld().isFastEditing() && originalBlockData == null) {
+            this.originalBlockData = this.blockData;
+        }
         this.blockData = blockData;
     }
     
@@ -148,9 +152,36 @@ public class FakeBlockBase implements FakeBlock {
         if (this.z != other.z) {
             return false;
         }
-        if (!Objects.equals(this.chunk, other.chunk)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.chunk, other.chunk);
+    }
+    
+    protected boolean hasChanged() {
+        if(originalBlockData == null) return false;
+        return this.blockData.getMaterial() != this.originalBlockData.getMaterial();
+    }
+    
+    protected BlockData getOriginalBlockData() {
+        return originalBlockData;
+    }
+    
+    protected void resetFastEditingMode() {
+        this.originalBlockData = null;
+    }
+
+    @Override
+    public void reset() {
+        this.setBlockData(getHandle().getBlockData(), true);
+//        this.setType(getHandle().getType(), true);
+//        this.registerChanged(ChangeType.PLUGIN, blockData, null);
+//        this.chunk.removeBlock(this);
+    }
+    
+//    public void _reset() {
+//        this.setBlockData(getHandle().getBlockData(), true);
+//    }
+
+    @Override
+    public FakeBlock getRelative(BlockFace face) {
+        return chunk.getWorld().getBlockAt(x + face.getModX(), y + face.getModY(), z + face.getModZ());
     }
 }

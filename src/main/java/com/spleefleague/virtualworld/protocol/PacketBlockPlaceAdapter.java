@@ -1,9 +1,10 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayClientUseItem;
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import com.spleefleague.virtualworld.FakeWorldManager;
@@ -13,12 +14,20 @@ import com.spleefleague.virtualworld.api.FakeWorld;
 import com.spleefleague.virtualworld.api.implementation.BlockChange.ChangeType;
 import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.event.FakeBlockPlaceEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.minecraft.server.v1_15_R1.BlockPosition;
+import net.minecraft.server.v1_15_R1.PacketPlayInUseItem;
+import net.minecraft.server.v1_15_R1.PacketPlayOutBlockChange;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_15_R1.block.data.CraftBlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -32,54 +41,43 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
     private final FakeWorldManager fwmanager;
 
     public PacketBlockPlaceAdapter(FakeWorldManager fwmanager) {
-        super(VirtualWorld.getInstance(), ListenerPriority.NORMAL, new PacketType[]{PacketType.Play.Client.USE_ITEM});
+        super(VirtualWorld.getInstance(), ListenerPriority.HIGH, new PacketType[]{PacketType.Play.Client.USE_ITEM});
         this.fwmanager = fwmanager;
     }
 
     @Override
     public void onPacketReceiving(PacketEvent event) {
-        if(event.isCancelled()) return;
         Player player = event.getPlayer();
-        WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event.getPacket());
-        Vector direction = new Vector(0, 0, 0);
-        switch(wrapper.getFace()) {
-            case UP: direction.setY(1); break;
-            case DOWN: direction.setY(-1); break;
-            case NORTH: direction.setZ(-1); break;
-            case SOUTH: direction.setZ(1); break;
-            case WEST: direction.setX(-1); break;
-            case EAST: direction.setX(1); break;
-        }
-        Location placeLocation = wrapper
-                .getLocation()
-                .toVector()
-                .add(direction)
-                .toLocation(player.getWorld());
+        PacketPlayInUseItem packet = (PacketPlayInUseItem)event.getPacket().getHandle();
+        BlockPosition nmsPosition = packet.c().getBlockPosition().shift(packet.c().getDirection());
+        Location placeLocation = new Location(player.getWorld(), nmsPosition.getX(), nmsPosition.getY(), nmsPosition.getZ());
         ItemStack handItem;
-        if(wrapper.getHand() == Hand.MAIN_HAND) {
+        if(event.getPacket().getHands().read(0) == Hand.MAIN_HAND) {
             handItem = player.getInventory().getItemInMainHand();
         }
         else {
             handItem = player.getInventory().getItemInOffHand();
         }
-        if(!handItem.getType().isBlock()) {
+        if(handItem.getType().isAir() || !handItem.getType().isBlock()) {
             return;
         }
-        FakeWorld targetWorld = fwmanager.getWorldAt(player, placeLocation);
+        FakeWorld targetWorld = fwmanager.getWorldAt(player.getUniqueId(), placeLocation, fw -> fw.isAllowBuilding());
         if(targetWorld != null) {
+            FakeBlock fb = targetWorld.getBlockAt(placeLocation);
+            if(!fb.getBlockData().getMaterial().isAir()) return;
             event.setCancelled(true);
-            FakeBlockPlaceEvent placeEvent = new FakeBlockPlaceEvent(player, targetWorld.getBlockAt(placeLocation), handItem.getType(), handItem.getData().getData());
+            FakeBlockPlaceEvent placeEvent = new FakeBlockPlaceEvent(player, fb, handItem.getType().createBlockData());
             Bukkit.getScheduler().runTask(VirtualWorld.getInstance(), () -> {
                 Bukkit.getPluginManager().callEvent(placeEvent);
                 if(placeEvent.isCancelled()) {
                     Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                        player.sendBlockChange(new Location(player.getWorld(), placeLocation.getX(), placeLocation.getY(), placeLocation.getZ()), Material.AIR, (byte)0);
+                        sendBlockChange(player, placeLocation, Material.AIR);
                     }, 1);
                     return;
                 }
                 FakeBlockBase eventBlock = (FakeBlockBase)placeEvent.getBlock();
-                BlockData oldState = eventBlock.getBlockdata().clone();
-                eventBlock._setType(handItem.getType());
+                BlockData oldState = eventBlock.getBlockData().clone();
+                eventBlock._setBlockData(handItem.getType().createBlockData());
                 //TODO parse MaterialData properly
                 eventBlock.registerChanged(ChangeType.PLACE, oldState, player);
                 if(player.getGameMode() != GameMode.CREATIVE) {
@@ -89,9 +87,19 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
         }
         else {
             Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                player.sendBlockChange(new Location(player.getWorld(), placeLocation.getX(), placeLocation.getY(), placeLocation.getZ()), Material.AIR, (byte)0);
+                sendBlockChange(player, placeLocation, Material.AIR);
             }, 1);
         }
+    }
+    
+    private void sendBlockChange(Player player, Location placeLocation, Material type) {
+        try {
+            PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(((CraftWorld)placeLocation.getWorld()).getHandle(), new net.minecraft.server.v1_15_R1.BlockPosition(placeLocation.getBlockX(), placeLocation.getBlockY(), placeLocation.getBlockZ()));
+            packet.block = ((CraftBlockData)type.createBlockData()).getState();
+            ProtocolLibrary.getProtocolManager().sendServerPacket(player, PacketContainer.fromPacket(packet), false);
+        } catch (InvocationTargetException ex) {
+            Logger.getLogger(PacketBlockPlaceAdapter.class.getName()).log(Level.SEVERE, null, ex);
+        } 
     }
 
     @Override
@@ -101,7 +109,7 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
     
     //Uses raytracing to find the location where the player intents to place a block.
     //Returns null if no location has been found
-    public Location getPlaceLocation(Player player, int radius) {
+    public Location getPlaceLocation(Player player, double radius) {
         World world = player.getWorld();
         Vector origin = player.getLocation().toVector();
         Vector direction = player.getLocation().getDirection();

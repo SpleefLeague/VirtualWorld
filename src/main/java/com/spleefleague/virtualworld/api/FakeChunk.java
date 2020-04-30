@@ -14,10 +14,12 @@ import org.bukkit.Chunk;
  */
 public interface FakeChunk {
     
+    void reset();
     int getX();
     int getZ();
     FakeWorld getWorld();
     FakeBlock getBlock(int x, int y, int z);
+    boolean isFakeBlock(int x, int y, int z);
     Collection<? extends FakeBlock> getUsedBlocks();
     Chunk getHandle();
 }

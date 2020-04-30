@@ -1,6 +1,7 @@
 package com.spleefleague.virtualworld.api.implementation;
 
 import com.spleefleague.virtualworld.Area;
+import com.spleefleague.virtualworld.api.FakeBlock;
 import com.spleefleague.virtualworld.api.FakeChunk;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,8 +45,7 @@ public class FakeChunkBase implements FakeChunk {
     
     @Override
     public FakeBlockBase getBlock(int x, int y, int z) {
-        //System.out.println(new Vector(this.x * 16 + x, y, this.z * 16 + z));
-        if(area != null && !area.isInside(new Vector(this.x * 16 + x, y, this.z * 16 + z))) {
+        if(area != null && !area.isInside(this.x * 16 + x, y, this.z * 16 + z)) {
             return null;
         }
         int key = getKey(x, y, z);
@@ -55,6 +55,15 @@ public class FakeChunkBase implements FakeChunk {
             blocks.put(key, block);
         }
         return block;
+    }
+    
+    @Override
+    public boolean isFakeBlock(int x, int y, int z) {
+        if(area != null && !area.isInside(this.x * 16 + x, y, this.z * 16 + z)) {
+            return false;
+        }
+        int key = getKey(x, y, z);
+        return null != blocks.get(key);
     }
 
     protected FakeBlockBase getBlockRaw(int x, int y, int z) {
@@ -89,5 +98,14 @@ public class FakeChunkBase implements FakeChunk {
     //z: [15..12]
     private int getKey(int x, int y, int z) {
         return (0xF & z) << 12 | (0xFF & y) << 4 | (0xF & x);
+    }
+    
+    private int getKey(FakeBlock block) {
+        return getKey(block.getX(), block.getY(), block.getZ());
+    }
+
+    @Override
+    public void reset() {
+        blocks.values().forEach(FakeBlockBase::reset);
     }
 }

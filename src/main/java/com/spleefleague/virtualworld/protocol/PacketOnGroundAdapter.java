@@ -1,9 +1,5 @@
 package com.spleefleague.virtualworld.protocol;
 
-import com.comphenix.packetwrapper.WrapperPlayClientFlying;
-import com.comphenix.packetwrapper.WrapperPlayClientLook;
-import com.comphenix.packetwrapper.WrapperPlayClientPosition;
-import com.comphenix.packetwrapper.WrapperPlayClientPositionLook;
 import com.comphenix.protocol.PacketType;
 import static com.comphenix.protocol.PacketType.Play.Client.FLYING;
 import static com.comphenix.protocol.PacketType.Play.Client.LOOK;
@@ -42,20 +38,7 @@ public class PacketOnGroundAdapter extends PacketAdapter implements Listener {
     @Override
     public void onPacketReceiving(PacketEvent event) {
         if(event.isCancelled()) return;
-        PacketType type = event.getPacketType();
-        boolean onGround = false;
-        if(type == FLYING) {
-            onGround = new WrapperPlayClientFlying(event.getPacket()).getOnGround();
-        }
-        else if(type == POSITION) {
-            onGround = new WrapperPlayClientPosition(event.getPacket()).getOnGround();
-        }
-        else if(type == POSITION_LOOK) {
-            onGround = new WrapperPlayClientPositionLook(event.getPacket()).getOnGround();
-        }
-        else if(type == LOOK) {
-            onGround = new WrapperPlayClientLook(event.getPacket()).getOnGround();
-        }
+        boolean onGround =  event.getPacket().getBooleans().read(0);
         this.onGround.put(event.getPlayer().getUniqueId(), onGround);
     }
     
