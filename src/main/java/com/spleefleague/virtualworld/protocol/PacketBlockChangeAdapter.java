@@ -12,9 +12,6 @@ import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeChunk;
 import java.util.ArrayList;
 import java.util.List;
-import static net.minecraft.server.v1_15_R1.BlockProperties.z;
-import static net.minecraft.server.v1_15_R1.Foods.y;
-import static net.minecraft.server.v1_15_R1.WorldGenSurface.x;
 import org.bukkit.entity.Player;
 
 /**

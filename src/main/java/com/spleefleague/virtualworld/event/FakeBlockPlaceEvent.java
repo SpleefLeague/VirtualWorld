@@ -4,7 +4,6 @@ import com.spleefleague.virtualworld.api.FakeBlock;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockMultiPlaceEvent;
 
 /**
  *

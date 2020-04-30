@@ -5,7 +5,6 @@
  */
 package com.spleefleague.virtualworld.api;
 
-import com.spleefleague.virtualworld.FakeWorldManager;
 import java.util.Iterator;
 import org.bukkit.block.Block;
 import org.bukkit.util.BlockIterator;

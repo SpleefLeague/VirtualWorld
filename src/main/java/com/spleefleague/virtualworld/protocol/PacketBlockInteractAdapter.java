@@ -4,11 +4,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.api.FakeBlock;
-import net.minecraft.server.v1_15_R1.MovingObjectPositionBlock;
 import net.minecraft.server.v1_15_R1.PacketPlayInUseItem;
 import org.bukkit.Location;
 
