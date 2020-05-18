@@ -1,6 +1,7 @@
 package com.spleefleague.virtualworld.protocol;
 
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
@@ -15,6 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.server.v1_15_R1.PacketPlayOutBlockChange;
 import net.minecraft.server.v1_15_R1.PacketPlayOutMultiBlockChange;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -48,6 +50,24 @@ public class MultiBlockChangeHandler implements Listener {
     public static MultiBlockChangeHandler init() {
         MultiBlockChangeHandler instance = new MultiBlockChangeHandler();
         return instance;
+    }
+    
+    public void sendBlockChange(Location loc, Material type, Collection<Player> affected) {
+        PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange();
+        PacketContainer container = PacketContainer.fromPacket(packet);
+        BlockPosition pos = new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        container.getBlockPositionModifier().write(0, pos);
+        container.getBlockData().write(0, WrappedBlockData.createData(type));
+        for (Player player : affected) {
+            if (player != null && loadedChunks.containsKey(player.getUniqueId()) && loadedChunks.get(player.getUniqueId()).contains(loc.getChunk())) {
+                try {
+                    VirtualWorld.getInstance().getProtocolManager().sendServerPacket(player, container, false);
+                } catch (InvocationTargetException ex) {
+                    Logger.getLogger(MultiBlockChangeHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    break;
+                }
+            }
+        } 
     }
 
     private void sendMultiBlockChange(MultiBlockChangeData mbcd, Collection<Player> affected) {

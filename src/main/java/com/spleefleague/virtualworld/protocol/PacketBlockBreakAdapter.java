@@ -11,6 +11,7 @@ import com.spleefleague.virtualworld.api.implementation.FakeBlockBase;
 import com.spleefleague.virtualworld.FakeWorldManager;
 import com.spleefleague.virtualworld.VirtualWorld;
 import com.spleefleague.virtualworld.event.FakeBlockBreakEvent;
+import java.util.Arrays;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -30,11 +31,13 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
 
     private final FakeWorldManager fakeWorldManager;
     private final PacketOnGroundAdapter groundStateManager;
+    private final MultiBlockChangeHandler mbcHandler;
     
-    public PacketBlockBreakAdapter(FakeWorldManager fwm, PacketOnGroundAdapter groundStateManager) {
+    public PacketBlockBreakAdapter(FakeWorldManager fwm, PacketOnGroundAdapter groundStateManager, MultiBlockChangeHandler mbcHandler) {
         super(VirtualWorld.getInstance(), ListenerPriority.NORMAL, new PacketType[]{PacketType.Play.Client.BLOCK_DIG});
         fakeWorldManager = fwm;
         this.groundStateManager = groundStateManager;
+        this.mbcHandler = mbcHandler;
     }
     
     @Override
@@ -53,7 +56,7 @@ public class PacketBlockBreakAdapter extends PacketAdapter {
                 Bukkit.getPluginManager().callEvent(breakEvent);
                 if(breakEvent.isCancelled()) {
                     Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                        p.sendBlockChange(new Location(p.getWorld(), loc.getX(), loc.getY(), loc.getZ()), affected.getBlockData());
+                        mbcHandler.sendBlockChange(new Location(p.getWorld(), loc.getX(), loc.getY(), loc.getZ()), affected.getBlockData().getMaterial(), Arrays.asList(p));
                     }, 1);
                     return;
                 }

@@ -31,7 +31,7 @@ public class VirtualWorld extends JavaPlugin {
     private FakeWorldManager fakeWorldManager;
     private PacketOnGroundAdapter groundStateManager;
     private PacketChunkUnloadAdapter chunkUnloadManager;
-    public PacketChunkLoadAdapter chunkLoadManager;
+    private PacketChunkLoadAdapter chunkLoadManager;
     private NoClipHandler noclipHandler;
     
     @Override
@@ -51,7 +51,7 @@ public class VirtualWorld extends JavaPlugin {
         manager.addPacketListener(groundStateManager);
         manager.addPacketListener(chunkLoadManager);
         manager.addPacketListener(chunkUnloadManager);
-        manager.addPacketListener(new PacketBlockBreakAdapter(fakeWorldManager, groundStateManager));
+        manager.addPacketListener(new PacketBlockBreakAdapter(fakeWorldManager, groundStateManager, mbchandler));
         manager.addPacketListener(new PacketBlockInteractAdapter(fakeWorldManager));
         manager.addPacketListener(new PacketBlockChangeAdapter(fakeWorldManager));
         manager.addPacketListener(new PacketBlockPlaceAdapter(fakeWorldManager));
