@@ -71,7 +71,7 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
                 Bukkit.getPluginManager().callEvent(placeEvent);
                 if(placeEvent.isCancelled()) {
                     Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                        sendBlockChange(player, placeLocation, Material.AIR);
+                        //sendBlockChange(player, placeLocation, Material.AIR);
                     }, 1);
                     return;
                 }
@@ -87,7 +87,7 @@ public class PacketBlockPlaceAdapter extends PacketAdapter {
         }
         else {
             Bukkit.getScheduler().runTaskLater(VirtualWorld.getInstance(), () -> {
-                sendBlockChange(player, placeLocation, Material.AIR);
+                //sendBlockChange(player, placeLocation, Material.AIR);
             }, 1);
         }
     }
